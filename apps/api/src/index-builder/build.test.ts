@@ -77,4 +77,48 @@ promoted_from: [01JNXK2MIDEA1, 01JNXK2MIDEA2]
     expect(result.priority).toBe('high');
     expect(result.promoted_from).toEqual(['01JNXK2MIDEA1', '01JNXK2MIDEA2']);
   });
+
+  it('returns entry with undefined required fields when frontmatter is absent', () => {
+    const md = '# Just a heading\n\nNo frontmatter here.';
+    const result = parseFrontmatter(md, 'ideas/no-fm.md');
+    expect(result.id).toBeUndefined();
+    expect(result.type).toBeUndefined();
+    expect(result.path).toBe('ideas/no-fm.md');
+  });
+
+  it('path argument overrides any path field in frontmatter', () => {
+    const md = `---
+id: 01JTEST
+type: idea
+title: Override Test
+status: draft
+tags: []
+summary: test
+created: 2026-01-01T00:00:00Z
+updated: 2026-01-01T00:00:00Z
+path: wrong/path.md
+---`;
+    const result = parseFrontmatter(md, 'ideas/correct-path.md');
+    expect(result.path).toBe('ideas/correct-path.md');
+  });
+
+  it('handles insight-specific fields', () => {
+    const md = `---
+id: 01JINSIGHT
+type: insight
+title: Pattern Detected
+status: active
+tags: [pattern]
+summary: You keep coming back to this
+created: 2026-01-01T00:00:00Z
+updated: 2026-01-01T00:00:00Z
+subtype: pattern
+generated_by: gemini-flash
+references: [01JIDEA1, 01JIDEA2, 01JIDEA3]
+---`;
+    const result = parseFrontmatter(md, 'ideas/insight.md');
+    expect(result.subtype).toBe('pattern');
+    expect(result.generated_by).toBe('gemini-flash');
+    expect(result.references).toEqual(['01JIDEA1', '01JIDEA2', '01JIDEA3']);
+  });
 });

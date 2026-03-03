@@ -61,8 +61,20 @@ export async function buildIndex(github: GitHubClient): Promise<IndexEntry[]> {
         const { content, encoding } = await github.getFile(file.path);
         const decoded =
           encoding === 'base64' ? Buffer.from(content, 'base64').toString('utf-8') : content;
-        entries.push(parseFrontmatter(decoded, file.path));
-      } catch {}
+        const entry = parseFrontmatter(decoded, file.path);
+        if (!entry.id || !entry.type || !entry.title) {
+          console.warn(
+            `[index-builder] skipping ${file.path}: missing required frontmatter fields`
+          );
+          continue;
+        }
+        entries.push(entry);
+      } catch (err) {
+        console.warn(
+          `[index-builder] skipping ${file.path}:`,
+          err instanceof Error ? err.message : err
+        );
+      }
     }
   }
 

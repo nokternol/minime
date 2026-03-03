@@ -1,0 +1,32 @@
+services:
+  api:
+    build:
+      context: ./apps/api
+    restart: unless-stopped
+    ports:
+      - "${API_PORT:-8744}:8744"
+    environment:
+      API_PORT: "8744"
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      ALLOWED_GOOGLE_EMAIL: ${ALLOWED_GOOGLE_EMAIL}
+      SESSION_SECRET: ${SESSION_SECRET}
+      GITHUB_TOKEN: ${GITHUB_TOKEN}
+      GITHUB_OWNER: ${GITHUB_OWNER}
+      GITHUB_REPO: ${GITHUB_REPO}
+      GITHUB_WEBHOOK_SECRET: ${GITHUB_WEBHOOK_SECRET}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      PARKED_ANALYSIS_CRON: ${PARKED_ANALYSIS_CRON:-0 9 * * 1}
+
+  web:
+    build:
+      context: ./apps/web
+    restart: unless-stopped
+    ports:
+      - "${PWA_PORT:-8743}:8743"
+    environment:
+      PORT: "8743"
+      PUBLIC_API_URL: ${PUBLIC_API_URL:-http://api:8744}
+    depends_on:
+      - api

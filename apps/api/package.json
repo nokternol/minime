@@ -1,5 +1,28 @@
 {
   "name": "@minime/api",
   "version": "0.1.0",
-  "private": true
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
+    "@google/generative-ai": "^0.21.0",
+    "@hono/node-server": "^1.13.0",
+    "google-auth-library": "^9.0.0",
+    "gray-matter": "^4.0.3",
+    "hono": "^4.6.0",
+    "node-cron": "^3.0.3",
+    "ulid": "^2.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/node-cron": "^3.0.11",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
+  }
 }

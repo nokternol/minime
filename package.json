@@ -4,6 +4,10 @@
   "workspaces": ["apps/*"],
   "scripts": {
     "dev": "docker compose up",
-    "build": "docker compose build"
+    "build": "docker compose build",
+    "check": "bash scripts/check.sh"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.0"
   }
 }

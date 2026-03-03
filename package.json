@@ -1,0 +1,9 @@
+{
+  "name": "minime",
+  "private": true,
+  "workspaces": ["apps/api", "apps/web"],
+  "scripts": {
+    "dev": "docker compose up",
+    "build": "docker compose build"
+  }
+}

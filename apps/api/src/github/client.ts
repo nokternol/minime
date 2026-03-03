@@ -1,5 +1,11 @@
 const BASE = 'https://api.github.com';
 
+interface GitHubFileResponse {
+  sha: string;
+  html_url?: string;
+  content?: { sha: string };
+}
+
 export class GitHubClient {
   constructor(
     private readonly token: string,
@@ -29,7 +35,7 @@ export class GitHubClient {
   }
 
   async upsertFile(path: string, content: string, message: string, branch: string, sha?: string) {
-    return this.request(`/repos/${this.owner}/${this.repo}/contents/${path}`, {
+    return this.request<GitHubFileResponse>(`/repos/${this.owner}/${this.repo}/contents/${path}`, {
       method: 'PUT',
       body: JSON.stringify({
         message,
@@ -42,12 +48,15 @@ export class GitHubClient {
 
   async createBranch(name: string, fromBranch = 'main') {
     const ref = await this.request<{ object: { sha: string } }>(
-      `/repos/${this.owner}/${this.repo}/git/ref/heads/${fromBranch}`
+      `/repos/${this.owner}/${this.repo}/git/refs/heads/${fromBranch}`
     );
-    return this.request(`/repos/${this.owner}/${this.repo}/git/refs`, {
-      method: 'POST',
-      body: JSON.stringify({ ref: `refs/heads/${name}`, sha: ref.object.sha }),
-    });
+    return this.request<{ ref: string; object: { sha: string } }>(
+      `/repos/${this.owner}/${this.repo}/git/refs`,
+      {
+        method: 'POST',
+        body: JSON.stringify({ ref: `refs/heads/${name}`, sha: ref.object.sha }),
+      }
+    );
   }
 
   async createPR(title: string, head: string, body = '') {
@@ -61,21 +70,21 @@ export class GitHubClient {
   }
 
   async mergePR(prNumber: number) {
-    return this.request(`/repos/${this.owner}/${this.repo}/pulls/${prNumber}/merge`, {
-      method: 'PUT',
-      body: JSON.stringify({ merge_method: 'squash' }),
-    });
+    return this.request<{ sha: string; merged: boolean; message: string }>(
+      `/repos/${this.owner}/${this.repo}/pulls/${prNumber}/merge`,
+      { method: 'PUT', body: JSON.stringify({ merge_method: 'squash' }) }
+    );
   }
 
   async closePR(prNumber: number) {
-    return this.request(`/repos/${this.owner}/${this.repo}/pulls/${prNumber}`, {
-      method: 'PATCH',
-      body: JSON.stringify({ state: 'closed' }),
-    });
+    return this.request<{ number: number; state: string }>(
+      `/repos/${this.owner}/${this.repo}/pulls/${prNumber}`,
+      { method: 'PATCH', body: JSON.stringify({ state: 'closed' }) }
+    );
   }
 
   async deleteBranch(name: string) {
-    return this.request(`/repos/${this.owner}/${this.repo}/git/refs/heads/${name}`, {
+    return this.request<void>(`/repos/${this.owner}/${this.repo}/git/refs/heads/${name}`, {
       method: 'DELETE',
     });
   }

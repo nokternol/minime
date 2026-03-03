@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { GitHubClient } from './client.js';
 
-// Mock global fetch
 const mockFetch = vi.fn();
 vi.stubGlobal('fetch', mockFetch);
 
@@ -42,10 +41,9 @@ describe('GitHubClient', () => {
   });
 
   it('upsertFile sends PUT with base64 content', async () => {
-    mockFetch.mockResolvedValueOnce(mockResponse({ content: { sha: 'new-sha' } }));
+    mockFetch.mockResolvedValueOnce(mockResponse({ sha: 'new-sha' }));
     await client.upsertFile('ideas/test.md', '# Hello', 'add: test', 'idea/branch');
-    const call = mockFetch.mock.calls[0];
-    const body = JSON.parse(call[1].body as string);
+    const body = JSON.parse(mockFetch.mock.calls[0][1].body as string);
     expect(body.content).toBe(Buffer.from('# Hello').toString('base64'));
     expect(body.branch).toBe('idea/branch');
     expect(body.message).toBe('add: test');
@@ -57,15 +55,16 @@ describe('GitHubClient', () => {
       .mockResolvedValueOnce(mockResponse({ ref: 'refs/heads/new-branch' }));
     await client.createBranch('new-branch');
     expect(mockFetch).toHaveBeenCalledTimes(2);
-    const secondCall = mockFetch.mock.calls[1];
-    const body = JSON.parse(secondCall[1].body as string);
-    expect(body.ref).toBe('refs/heads/new-branch');
-    expect(body.sha).toBe('main-sha');
+    // First call: fetch the ref — must use plural /refs/
+    expect(mockFetch.mock.calls[0][0]).toContain('/git/refs/heads/main');
+    const secondBody = JSON.parse(mockFetch.mock.calls[1][1].body as string);
+    expect(secondBody.ref).toBe('refs/heads/new-branch');
+    expect(secondBody.sha).toBe('main-sha');
   });
 
   it('createPR sends correct payload', async () => {
     mockFetch.mockResolvedValueOnce(
-      mockResponse({ number: 42, html_url: 'https://github.com/...' })
+      mockResponse({ number: 42, html_url: 'https://github.com/pr/42' })
     );
     const result = await client.createPR('My PR', 'feature-branch');
     expect(result.number).toBe(42);
@@ -74,8 +73,57 @@ describe('GitHubClient', () => {
     expect(body.base).toBe('main');
   });
 
-  it('throws on non-ok response', async () => {
+  it('mergePR sends squash PUT', async () => {
+    mockFetch.mockResolvedValueOnce(
+      mockResponse({ sha: 'merge-sha', merged: true, message: 'ok' })
+    );
+    const result = await client.mergePR(42);
+    expect(result.merged).toBe(true);
+    expect(mockFetch.mock.calls[0][0]).toContain('/pulls/42/merge');
+    const body = JSON.parse(mockFetch.mock.calls[0][1].body as string);
+    expect(body.merge_method).toBe('squash');
+  });
+
+  it('closePR sends PATCH state closed', async () => {
+    mockFetch.mockResolvedValueOnce(mockResponse({ number: 42, state: 'closed' }));
+    await client.closePR(42);
+    expect(mockFetch.mock.calls[0][0]).toContain('/pulls/42');
+    const body = JSON.parse(mockFetch.mock.calls[0][1].body as string);
+    expect(body.state).toBe('closed');
+  });
+
+  it('deleteBranch sends DELETE to correct path', async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 204,
+      json: () => Promise.resolve(null),
+      text: () => Promise.resolve(''),
+    });
+    await client.deleteBranch('idea/my-branch');
+    expect(mockFetch.mock.calls[0][0]).toContain('/git/refs/heads/idea/my-branch');
+    expect(mockFetch.mock.calls[0][1].method).toBe('DELETE');
+  });
+
+  it('listOpenPRs fetches open PRs', async () => {
+    const prs = [{ number: 1, title: 'PR 1', head: { ref: 'branch-1' } }];
+    mockFetch.mockResolvedValueOnce(mockResponse(prs));
+    const result = await client.listOpenPRs();
+    expect(result).toHaveLength(1);
+    expect(mockFetch.mock.calls[0][0]).toContain('?state=open&per_page=100');
+  });
+
+  it('listFiles returns array of file entries', async () => {
+    const files = [{ name: 'test.md', path: 'ideas/test.md', type: 'file' }];
+    mockFetch.mockResolvedValueOnce(mockResponse(files));
+    const result = await client.listFiles('ideas');
+    expect(result).toHaveLength(1);
+    expect(result[0].path).toBe('ideas/test.md');
+  });
+
+  it('throws on non-ok response including body', async () => {
     mockFetch.mockResolvedValueOnce(mockResponse({ message: 'Not Found' }, 404));
-    await expect(client.getFile('missing.md')).rejects.toThrow('GitHub API error: 404');
+    await expect(client.getFile('missing.md')).rejects.toThrow(
+      'GitHub API error: 404 {"message":"Not Found"}'
+    );
   });
 });

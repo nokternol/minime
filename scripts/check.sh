@@ -4,6 +4,11 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
+if ! command -v npx &>/dev/null; then
+  echo "❌ npx not found — ensure Node.js is installed and in PATH" >&2
+  exit 1
+fi
+
 PASS=0
 FAIL=0
 

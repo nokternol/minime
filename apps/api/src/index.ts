@@ -8,6 +8,8 @@ import { authRoutes } from './routes/auth.js'
 import { webhookRoutes } from './routes/webhook.js'
 import { contentRoutes } from './routes/content.js'
 import { lifecycleRoutes } from './routes/lifecycle.js'
+import { LLMRouter } from './llm/router.js'
+import { chatRoutes } from './routes/chat.js'
 
 const app = new Hono()
 
@@ -32,6 +34,8 @@ app.route('/', authRoutes(googleAuth))
 app.route('/', webhookRoutes(cache, process.env.GITHUB_WEBHOOK_SECRET!))
 app.route('/', contentRoutes(cache, github))
 app.route('/', lifecycleRoutes(github, cache))
+const llm = new LLMRouter(process.env.ANTHROPIC_API_KEY!, process.env.GEMINI_API_KEY!)
+app.route('/', chatRoutes(llm, cache))
 app.get('/health', (c) => c.json({ status: 'ok' }))
 
 const port = Number.parseInt(process.env.API_PORT ?? '8744', 10)

@@ -1,0 +1,60 @@
+import { Hono } from 'hono'
+import { setCookie, getCookie, deleteCookie } from 'hono/cookie'
+import type { GoogleAuth } from '../auth/google.js'
+
+const SESSIONS = new Map<string, { email: string; name: string }>()
+
+export function authRoutes(auth: GoogleAuth) {
+  const app = new Hono()
+
+  app.get('/auth/login', (c) => {
+    return c.redirect(auth.getAuthUrl())
+  })
+
+  app.get('/auth/callback', async (c) => {
+    const code = c.req.query('code')
+    if (!code) return c.json({ error: 'no code' }, 400)
+    try {
+      const user = await auth.exchange(code)
+      const sessionId = crypto.randomUUID()
+      SESSIONS.set(sessionId, user)
+      setCookie(c, 'session', sessionId, {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'Lax',
+        maxAge: 60 * 60 * 24 * 30,
+        path: '/',
+      })
+      return c.redirect('/')
+    } catch {
+      return c.json({ error: 'auth failed' }, 403)
+    }
+  })
+
+  app.get('/auth/me', (c) => {
+    const sessionId = getCookie(c, 'session')
+    if (!sessionId) return c.json(null)
+    const user = SESSIONS.get(sessionId)
+    return c.json(user ?? null)
+  })
+
+  app.post('/auth/logout', (c) => {
+    const sessionId = getCookie(c, 'session')
+    if (sessionId) SESSIONS.delete(sessionId)
+    deleteCookie(c, 'session')
+    return c.json({ ok: true })
+  })
+
+  return app
+}
+
+export function requireAuth() {
+  return async (c: any, next: any) => {
+    const sessionId = getCookie(c, 'session')
+    if (!sessionId || !SESSIONS.has(sessionId)) {
+      return c.json({ error: 'unauthorized' }, 401)
+    }
+    c.set('user', SESSIONS.get(sessionId))
+    await next()
+  }
+}

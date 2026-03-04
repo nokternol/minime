@@ -123,6 +123,99 @@ references: [01JIDEA1, 01JIDEA2, 01JIDEA3]
   });
 });
 
+describe('parseFrontmatter — YAML edge cases', () => {
+  // Scalar tags: user forgets brackets → `tags: typescript` instead of `tags: [typescript]`
+  it('normalises scalar tags string to single-element array', () => {
+    const md = `---\nid: X\ntype: idea\ntitle: T\nstatus: draft\ntags: typescript\nsummary: s\ncreated: "2026-01-01T00:00:00Z"\nupdated: "2026-01-01T00:00:00Z"\n---`
+    const result = parseFrontmatter(md, 'ideas/x.md')
+    expect(Array.isArray(result.tags)).toBe(true)
+    expect(result.tags).toEqual(['typescript'])
+  })
+
+  it('normalises null/absent tags to empty array', () => {
+    const md = `---\nid: X\ntype: idea\ntitle: T\nstatus: draft\ntags:\nsummary: s\ncreated: "2026-01-01T00:00:00Z"\nupdated: "2026-01-01T00:00:00Z"\n---`
+    const result = parseFrontmatter(md, 'ideas/x.md')
+    expect(result.tags).toEqual([])
+  })
+
+  // Mixed-type arrays: `tags: [01ABC, 99, true]` → gray-matter gives ["01ABC", 99, true]
+  it('coerces non-string tag elements (numbers, booleans) to strings', () => {
+    const md = `---\nid: X\ntype: idea\ntitle: T\nstatus: draft\ntags: [01ABC, 99, true]\nsummary: s\ncreated: "2026-01-01T00:00:00Z"\nupdated: "2026-01-01T00:00:00Z"\n---`
+    const result = parseFrontmatter(md, 'ideas/x.md')
+    expect(result.tags).toEqual(['01ABC', '99', 'true'])
+    expect(result.tags.every(t => typeof t === 'string')).toBe(true)
+  })
+
+  // Numeric id: `id: 123` → gray-matter gives number 123, not string '123'
+  it('coerces numeric id to string so findById works', () => {
+    const md = `---\nid: 123\ntype: idea\ntitle: T\nstatus: draft\ntags: []\nsummary: s\ncreated: "2026-01-01T00:00:00Z"\nupdated: "2026-01-01T00:00:00Z"\n---`
+    const result = parseFrontmatter(md, 'ideas/x.md')
+    expect(typeof result.id).toBe('string')
+    expect(result.id).toBe('123')
+  })
+
+  // Date-only timestamp: `updated: 2026-03-01` → gray-matter gives a Date object
+  it('allows Date-object updated field (sort handles it via new Date())', () => {
+    const md = `---\nid: X\ntype: idea\ntitle: T\nstatus: draft\ntags: []\nsummary: s\ncreated: 2026-01-01\nupdated: 2026-03-01\n---`
+    const result = parseFrontmatter(md, 'ideas/x.md')
+    // Should not throw; value is a Date object which new Date() handles correctly
+    expect(new Date(result.updated as string).getFullYear()).toBe(2026)
+  })
+
+  // Null updated: `updated:` → null; sort should put at epoch without throwing
+  it('handles null updated without throwing during sort', () => {
+    const md = `---\nid: X\ntype: idea\ntitle: T\nstatus: draft\ntags: []\nsummary: s\ncreated: "2026-01-01T00:00:00Z"\nupdated:\n---`
+    const result = parseFrontmatter(md, 'ideas/x.md')
+    // new Date(null).getTime() === 0 — sorts to bottom, no throw
+    expect(() => new Date(result.updated as string).getTime()).not.toThrow()
+  })
+})
+
+describe('buildIndex — YAML edge cases', () => {
+  it('skips files that throw a YAML parse error (e.g. unquoted colon in title)', async () => {
+    // `title: My Plan: Part 2` is invalid YAML — colon in unquoted scalar
+    const bad = Buffer.from('---\nid: X\ntype: idea\ntitle: My Plan: Part 2\nstatus: draft\ntags: []\nsummary: s\nupdated: "2026-01-01T00:00:00Z"\n---').toString('base64')
+    const github = makeGithub({
+      listFiles: vi.fn().mockImplementation((dir: string) =>
+        dir === 'ideas' ? [{ path: 'ideas/bad.md', type: 'file' }] : []
+      ),
+      getFile: vi.fn().mockResolvedValue({ content: bad, encoding: 'base64' }),
+    })
+    // Should not throw; file is silently skipped
+    const result = await buildIndex(github)
+    expect(result).toEqual([])
+  })
+
+  it('normalises scalar tags so downstream search does not throw', async () => {
+    const scalar = Buffer.from('---\nid: SCALAR\ntype: idea\ntitle: Tag Test\nstatus: active\ntags: typescript\nsummary: s\ncreated: "2026-01-01T00:00:00Z"\nupdated: "2026-01-01T00:00:00Z"\n---').toString('base64')
+    const github = makeGithub({
+      listFiles: vi.fn().mockImplementation((dir: string) =>
+        dir === 'ideas' ? [{ path: 'ideas/scalar.md', type: 'file' }] : []
+      ),
+      getFile: vi.fn().mockResolvedValue({ content: scalar, encoding: 'base64' }),
+    })
+    const result = await buildIndex(github)
+    expect(result).toHaveLength(1)
+    expect(result[0].tags).toEqual(['typescript'])
+    // Confirm .some() works (would throw if tags were a string)
+    expect(() => result[0].tags.some(t => t.includes('type'))).not.toThrow()
+  })
+
+  it('coerces numeric id so it appears as string in index', async () => {
+    const numId = Buffer.from('---\nid: 9001\ntype: idea\ntitle: Numeric ID\nstatus: active\ntags: []\nsummary: s\ncreated: "2026-01-01T00:00:00Z"\nupdated: "2026-01-01T00:00:00Z"\n---').toString('base64')
+    const github = makeGithub({
+      listFiles: vi.fn().mockImplementation((dir: string) =>
+        dir === 'ideas' ? [{ path: 'ideas/numid.md', type: 'file' }] : []
+      ),
+      getFile: vi.fn().mockResolvedValue({ content: numId, encoding: 'base64' }),
+    })
+    const result = await buildIndex(github)
+    expect(result).toHaveLength(1)
+    expect(typeof result[0].id).toBe('string')
+    expect(result[0].id).toBe('9001')
+  })
+});
+
 import { vi } from 'vitest'
 import { buildIndex } from './build.js'
 import type { GitHubClient } from '../github/client.js'

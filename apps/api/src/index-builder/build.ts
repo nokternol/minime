@@ -38,7 +38,21 @@ export interface IndexEntry {
 
 export function parseFrontmatter(content: string, path: string): IndexEntry {
   const { data } = matter(content);
-  return { ...(data as Omit<IndexEntry, 'path'>), path };
+  const entry = data as Record<string, unknown>;
+
+  // Normalize tags: scalar string → single-element array; coerce all elements to string
+  if (!Array.isArray(entry.tags)) {
+    entry.tags = entry.tags != null ? [String(entry.tags)] : [];
+  } else {
+    entry.tags = (entry.tags as unknown[]).map(t => String(t));
+  }
+
+  // Normalize id: YAML parses bare integers as numbers; coerce to string
+  if (typeof entry.id === 'number') {
+    entry.id = String(entry.id);
+  }
+
+  return { ...(entry as Omit<IndexEntry, 'path'>), path };
 }
 
 const CONTENT_DIRS = ['ideas', 'plans', 'discussions', 'solutions'] as const;

@@ -37,7 +37,7 @@ export function contentRoutes(cache: IndexCache, github: GitHubClient) {
     const entry = cache.findById(id)
     if (!entry) return c.json({ error: 'not found' }, 404)
 
-    const { content, encoding } = await github.getFile(entry.path)
+    const { content, encoding } = await github.getFile(entry.path, entry.branch ?? 'main')
     const decoded = encoding === 'base64'
       ? Buffer.from(content, 'base64').toString('utf-8')
       : content

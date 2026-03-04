@@ -10,11 +10,23 @@ export function lifecycleRoutes(github: GitHubClient, cache: IndexCache) {
   // Capture new item
   app.post('/api/capture', requireAuth(), async (c) => {
     const input = await c.req.json()
-    const doc = buildDocument(input)
-    await github.createBranch(doc.branchName)
-    await github.upsertFile(doc.path, doc.content, `capture: ${input.title}`, doc.branchName)
-    const pr = await github.createPR(`[${input.type}] ${input.title}`, doc.branchName)
-    return c.json({ id: doc.id, path: doc.path, pr: pr.number, branch: doc.branchName })
+    try {
+      const doc = buildDocument(input)
+      await github.createBranch(doc.branchName)
+      await github.upsertFile(doc.path, doc.content, `capture: ${input.title}`, doc.branchName)
+      const pr = await github.createPR(`[${input.type}] ${input.title}`, doc.branchName)
+      const now = new Date().toISOString()
+      cache.upsert({
+        id: doc.id, type: input.type, title: input.title, status: 'draft',
+        tags: input.tags ?? [], summary: input.summary ?? '',
+        created: now, updated: now, path: doc.path,
+        branch: doc.branchName, pr: pr.number,
+      })
+      return c.json({ id: doc.id, path: doc.path, pr: pr.number, branch: doc.branchName })
+    } catch (err) {
+      console.error('[capture]', err)
+      return c.json({ error: String(err) }, 500)
+    }
   })
 
   // Commit to memory (merge PR)

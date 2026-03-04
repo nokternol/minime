@@ -33,7 +33,7 @@ export class LLMRouter {
   }
 
   async summarise(content: string): Promise<string> {
-    const model = this.gemini.getGenerativeModel({ model: 'gemini-2.0-flash' })
+    const model = this.gemini.getGenerativeModel({ model: 'gemini-flash-latest' })
     const result = await model.generateContent(
       `Write a 2-3 sentence session summary of this conversation. Be specific about decisions made and next steps.\n\n${content}`
     )
@@ -41,7 +41,7 @@ export class LLMRouter {
   }
 
   async generateFrontmatter(title: string, body: string, type: string): Promise<{ tags: string[]; summary: string }> {
-    const model = this.gemini.getGenerativeModel({ model: 'gemini-2.0-flash' })
+    const model = this.gemini.getGenerativeModel({ model: 'gemini-flash-latest' })
     const result = await model.generateContent(
       `Given this ${type} titled "${title}", generate:
 1. A one-sentence summary (max 20 words)

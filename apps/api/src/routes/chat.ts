@@ -17,8 +17,13 @@ export function chatRoutes(llm: LLMRouter, cache: IndexCache) {
 
   app.post('/api/chat/summarise', requireAuth(), async (c) => {
     const { conversation } = await c.req.json()
-    const summary = await llm.summarise(conversation)
-    return c.json({ summary })
+    try {
+      const summary = await llm.summarise(conversation)
+      return c.json({ summary })
+    } catch (err) {
+      console.error('[summarise]', err)
+      return c.json({ error: String(err) }, 500)
+    }
   })
 
   app.post('/api/chat/frontmatter', requireAuth(), async (c) => {

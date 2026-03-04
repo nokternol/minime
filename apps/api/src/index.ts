@@ -6,6 +6,7 @@ import { IndexCache } from './store/index-cache.js'
 import { GoogleAuth } from './auth/google.js'
 import { authRoutes } from './routes/auth.js'
 import { webhookRoutes } from './routes/webhook.js'
+import { contentRoutes } from './routes/content.js'
 
 const app = new Hono()
 
@@ -28,6 +29,7 @@ const googleAuth = new GoogleAuth(
 
 app.route('/', authRoutes(googleAuth))
 app.route('/', webhookRoutes(cache, process.env.GITHUB_WEBHOOK_SECRET!))
+app.route('/', contentRoutes(cache, github))
 app.get('/health', (c) => c.json({ status: 'ok' }))
 
 const port = Number.parseInt(process.env.API_PORT ?? '8744', 10)

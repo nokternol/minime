@@ -78,5 +78,5 @@ export async function buildIndex(github: GitHubClient): Promise<IndexEntry[]> {
     }
   }
 
-  return entries.sort((a, b) => b.updated.localeCompare(a.updated));
+  return entries.sort((a, b) => new Date(b.updated as string).getTime() - new Date(a.updated as string).getTime());
 }

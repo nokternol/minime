@@ -10,6 +10,8 @@ import { contentRoutes } from './routes/content.js'
 import { lifecycleRoutes } from './routes/lifecycle.js'
 import { LLMRouter } from './llm/router.js'
 import { chatRoutes } from './routes/chat.js'
+import cron from 'node-cron'
+import { runParkedAnalysis } from './jobs/parked-analysis.js'
 
 const app = new Hono()
 
@@ -42,3 +44,7 @@ const port = Number.parseInt(process.env.API_PORT ?? '8744', 10)
 if (Number.isNaN(port)) throw new Error(`Invalid API_PORT: "${process.env.API_PORT}"`)
 serve({ fetch: app.fetch, port })
 console.log(`API running on port ${port}`)
+
+const analysisCron = process.env.PARKED_ANALYSIS_CRON ?? '0 9 * * 1'
+cron.schedule(analysisCron, () => runParkedAnalysis(llm, cache, github))
+console.log(`Parked analysis scheduled: ${analysisCron}`)

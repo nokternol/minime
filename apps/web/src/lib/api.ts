@@ -32,7 +32,7 @@ export const api = {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(input),
   }),
   patch: (id: string, body: { session_summary: string }) =>
-    req(`/api/content/${id}`, {
+    req<{ ok: boolean }>(`/api/content/${id}`, {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
     }),
   commit: (id: string) => req(`/api/content/${id}/commit`, { method: 'POST' }),

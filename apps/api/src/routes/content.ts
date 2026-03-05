@@ -46,12 +46,12 @@ export function contentRoutes(cache: IndexCache, github: GitHubClient) {
     return c.json({ ...entry, ...data, body })
   })
 
-  // Patch a single item — merges provided fields into frontmatter and writes back
+  // Patch a single item — writes session_summary into frontmatter and pushes to branch
   app.patch('/api/content/:id', requireAuth(), async (c) => {
     const id = c.req.param('id')
-    const { session_summary } = await c.req.json<{ session_summary: string }>()
     const entry = cache.findById(id)
     if (!entry) return c.json({ error: 'not found' }, 404)
+    const { session_summary } = await c.req.json<{ session_summary: string }>()
 
     const { content, encoding, sha } = await github.getFile(entry.path, entry.branch ?? 'main')
     const decoded = encoding === 'base64'

@@ -12,7 +12,7 @@
   let contextTitles: string[] = []
   let error = ''
 
-  const id = $page.params.id
+  const id = $page.params.id!
 
   onMount(async () => {
     item = await api.contentById(id)

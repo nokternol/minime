@@ -31,6 +31,10 @@ export const api = {
   capture: (input: unknown) => req<{ id: string; pr: number; branch: string }>('/api/capture', {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(input),
   }),
+  patch: (id: string, body: { session_summary: string }) =>
+    req(`/api/content/${id}`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+    }),
   commit: (id: string) => req(`/api/content/${id}/commit`, { method: 'POST' }),
   dismiss: (id: string) => req(`/api/content/${id}/dismiss`, { method: 'POST' }),
   chat: (messages: unknown[], query?: string, relatedToId?: string) =>

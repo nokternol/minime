@@ -35,7 +35,8 @@
 
   async function finish() {
     const conversation = messages.map(m => `${m.role}: ${m.content}`).join('\n')
-    await api.summarise(conversation)
+    const { summary } = await api.summarise(conversation)
+    await api.patch(id, { session_summary: summary })
     await api.commit(id)
     goto('/')
   }

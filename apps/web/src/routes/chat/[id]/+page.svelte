@@ -1,44 +1,55 @@
 <script lang="ts">
-  import { page } from '$app/stores'
-  import { onMount } from 'svelte'
-  import { goto } from '$app/navigation'
-  import { api } from '$lib/api.js'
-  import type { ContentDetail } from '$lib/api.js'
+import { goto } from '$app/navigation';
+import { page } from '$app/stores';
+import { api } from '$lib/api.js';
+import type { ContentDetail } from '$lib/api.js';
+import { onMount } from 'svelte';
 
-  let item: ContentDetail | null = null
-  let messages: Array<{ role: 'user' | 'assistant'; content: string }> = []
-  let input = ''
-  let loading = false
-  let contextTitles: string[] = []
+let item: ContentDetail | null = null;
+let messages: Array<{ role: 'user' | 'assistant'; content: string }> = [];
+let input = '';
+let loading = false;
+let contextTitles: string[] = [];
+let error = '';
 
-  const id = $page.params.id
+const idParam = $page.params.id;
+if (!idParam) throw new Error('Missing route param: id');
+const id = idParam;
 
-  onMount(async () => {
-    item = await api.contentById(id)
-    if (item?.session_summary) {
-      messages = [{ role: 'assistant', content: `Continuing from last session:\n\n${item.session_summary}` }]
-    }
-  })
-
-  async function send() {
-    if (!input.trim()) return
-    const userMsg = { role: 'user' as const, content: input }
-    messages = [...messages, userMsg]
-    input = ''
-    loading = true
-    try {
-      const res = await api.chat(messages, item?.title, id)
-      messages = [...messages, { role: 'assistant', content: res.reply }]
-      contextTitles = res.context.map(c => c.title)
-    } finally { loading = false }
+onMount(async () => {
+  item = await api.contentById(id);
+  if (item?.session_summary) {
+    messages = [
+      { role: 'assistant', content: `Continuing from last session:\n\n${item.session_summary}` },
+    ];
   }
+});
 
-  async function finish() {
-    const conversation = messages.map(m => `${m.role}: ${m.content}`).join('\n')
-    await api.summarise(conversation)
-    await api.commit(id)
-    goto('/')
+async function send() {
+  if (!input.trim()) return;
+  const userMsg = { role: 'user' as const, content: input };
+  messages = [...messages, userMsg];
+  input = '';
+  loading = true;
+  error = '';
+  try {
+    const res = await api.chat(messages, item?.title, id);
+    messages = [...messages, { role: 'assistant', content: res.reply }];
+    contextTitles = res.context.map((c) => c.title);
+  } catch {
+    error = 'Failed to send message. Please try again.';
+  } finally {
+    loading = false;
   }
+}
+
+async function finish() {
+  const conversation = messages.map((m) => `${m.role}: ${m.content}`).join('\n');
+  const { summary } = await api.summarise(conversation);
+  await api.patch(id, { session_summary: summary });
+  await api.commit(id);
+  goto('/');
+}
 </script>
 
 <div style="max-width:480px;margin:0 auto;display:flex;flex-direction:column;height:100vh;font-family:system-ui;background:#0f0f0f;color:#fff">
@@ -66,6 +77,9 @@
     {/each}
     {#if loading}
       <div style="align-self:flex-start;color:#666;font-size:14px">...</div>
+    {/if}
+    {#if error}
+      <p role="alert" style="color:#f87171;font-size:13px;padding:0 4px">{error}</p>
     {/if}
   </div>
 

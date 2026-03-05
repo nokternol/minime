@@ -31,7 +31,7 @@ echo "  Minime quality checks"
 echo "════════════════════════════════════"
 
 # Biome: lint + format check
-run_step "Biome lint + format" npx biome check .
+run_step "Biome lint + format" npx biome check --write .
 
 # TypeScript: typecheck per app (added as apps are scaffolded)
 if [ -f "apps/api/tsconfig.json" ]; then

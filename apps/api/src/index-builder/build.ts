@@ -44,7 +44,7 @@ export function parseFrontmatter(content: string, path: string): IndexEntry {
   if (!Array.isArray(entry.tags)) {
     entry.tags = entry.tags != null ? [String(entry.tags)] : [];
   } else {
-    entry.tags = (entry.tags as unknown[]).map(t => String(t));
+    entry.tags = (entry.tags as unknown[]).map((t) => String(t));
   }
 
   // Normalize id: YAML parses bare integers as numbers; coerce to string
@@ -92,5 +92,7 @@ export async function buildIndex(github: GitHubClient): Promise<IndexEntry[]> {
     }
   }
 
-  return entries.sort((a, b) => new Date(b.updated as string).getTime() - new Date(a.updated as string).getTime());
+  return entries.sort(
+    (a, b) => new Date(b.updated as string).getTime() - new Date(a.updated as string).getTime()
+  );
 }

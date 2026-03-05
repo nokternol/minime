@@ -1,13 +1,13 @@
-import type { IndexEntry } from '../index-builder/build.js'
+import type { IndexEntry } from '../index-builder/build.js';
 
 export interface ContextEntry {
-  id: string
-  type: string
-  title: string
-  status: string
-  tags: string[]
-  summary: string
-  session_summary?: string
+  id: string;
+  type: string;
+  title: string;
+  status: string;
+  tags: string[];
+  summary: string;
+  session_summary?: string;
 }
 
 export function assembleContext(
@@ -16,28 +16,31 @@ export function assembleContext(
   relatedToId: string | undefined,
   limit = 5
 ): ContextEntry[] {
-  let scored = entries.map(e => ({ entry: e, score: 0 }))
+  let scored = entries.map((e) => ({ entry: e, score: 0 }));
 
   if (query) {
-    const q = query.toLowerCase()
+    const q = query.toLowerCase();
     scored = scored.map(({ entry, score }) => ({
       entry,
-      score: score
-        + (entry.title.toLowerCase().includes(q) ? 3 : 0)
-        + (entry.summary?.toLowerCase().includes(q) ? 2 : 0)
-        + (entry.tags?.some(t => t.toLowerCase().includes(q)) ? 1 : 0),
-    }))
+      score:
+        score +
+        (entry.title.toLowerCase().includes(q) ? 3 : 0) +
+        (entry.summary?.toLowerCase().includes(q) ? 2 : 0) +
+        (entry.tags?.some((t) => t.toLowerCase().includes(q)) ? 1 : 0),
+    }));
   }
 
   if (relatedToId) {
     scored = scored.map(({ entry, score }) => ({
       entry,
-      score: score + (
-        entry.related_to === relatedToId ||
+      score:
+        score +
+        (entry.related_to === relatedToId ||
         entry.promoted_from?.includes(relatedToId) ||
-        entry.references?.includes(relatedToId) ? 4 : 0
-      ),
-    }))
+        entry.references?.includes(relatedToId)
+          ? 4
+          : 0),
+    }));
   }
 
   return scored
@@ -51,15 +54,15 @@ export function assembleContext(
       tags: entry.tags,
       summary: entry.summary,
       session_summary: entry.session_summary,
-    }))
+    }));
 }
 
 export function formatContextBlock(entries: ContextEntry[]): string {
-  if (!entries.length) return 'No relevant prior context found.'
-  return entries.map(e =>
-    `[${e.type.toUpperCase()}] ${e.title} (${e.status})\n` +
-    `Summary: ${e.summary}\n` +
-    (e.session_summary ? `Last session: ${e.session_summary}\n` : '') +
-    `Tags: ${e.tags.join(', ')}`
-  ).join('\n\n')
+  if (!entries.length) return 'No relevant prior context found.';
+  return entries
+    .map(
+      (e) =>
+        `[${e.type.toUpperCase()}] ${e.title} (${e.status})\nSummary: ${e.summary}\n${e.session_summary ? `Last session: ${e.session_summary}\n` : ''}Tags: ${e.tags.join(', ')}`
+    )
+    .join('\n\n');
 }

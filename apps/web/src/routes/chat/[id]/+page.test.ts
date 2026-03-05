@@ -2,6 +2,7 @@ import { render, screen, waitFor } from '@testing-library/svelte'
 import { server } from '../../../tests/server'
 import { http, HttpResponse } from 'msw'
 import { describe, test, expect, vi } from 'vitest'
+import userEvent from '@testing-library/user-event'
 import Page from './+page.svelte'
 
 vi.mock('$app/stores', async () => {
@@ -35,6 +36,42 @@ describe('/chat/[id]', () => {
 
     await waitFor(() =>
       expect(screen.getByRole('button', { name: /commit/i })).toBeInTheDocument()
+    )
+  })
+
+  test('finish() calls summarise → patch → commit in order', async () => {
+    const calls: string[] = []
+
+    server.use(
+      http.get('http://localhost:8744/api/content/test-id', () =>
+        HttpResponse.json({
+          id: 'test-id', type: 'idea', title: 'Test', status: 'draft',
+          tags: [], summary: '', created: '2026-01-01', updated: '2026-01-01',
+          path: 'wiki/test-id.md', body: '', pr: 42, branch: 'feat/test-id',
+        })
+      ),
+      http.post('http://localhost:8744/api/chat/summarise', () => {
+        calls.push('summarise')
+        return HttpResponse.json({ summary: 'session text' })
+      }),
+      http.patch('http://localhost:8744/api/content/test-id', async ({ request }) => {
+        const body = await request.json() as Record<string, unknown>
+        expect(body.session_summary).toBe('session text')
+        calls.push('patch')
+        return HttpResponse.json({ ok: true })
+      }),
+      http.post('http://localhost:8744/api/content/test-id/commit', () => {
+        calls.push('commit')
+        return HttpResponse.json({ ok: true })
+      }),
+    )
+
+    render(Page)
+    await waitFor(() => screen.getByRole('button', { name: /commit/i }))
+    await userEvent.click(screen.getByRole('button', { name: /commit/i }))
+
+    await waitFor(() =>
+      expect(calls).toEqual(['summarise', 'patch', 'commit'])
     )
   })
 })

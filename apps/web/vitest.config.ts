@@ -8,5 +8,13 @@ export default defineConfig({
     environment: 'happy-dom',
     setupFiles: ['./src/tests/setup.ts'],
     globals: false,
+    server: {
+      deps: {
+        conditions: ['browser'],
+      },
+    },
+  },
+  resolve: {
+    conditions: ['browser'],
   },
 })

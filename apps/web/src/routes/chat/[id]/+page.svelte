@@ -10,6 +10,7 @@
   let input = ''
   let loading = false
   let contextTitles: string[] = []
+  let error = ''
 
   const id = $page.params.id
 
@@ -26,10 +27,13 @@
     messages = [...messages, userMsg]
     input = ''
     loading = true
+    error = ''
     try {
       const res = await api.chat(messages, item?.title, id)
       messages = [...messages, { role: 'assistant', content: res.reply }]
       contextTitles = res.context.map(c => c.title)
+    } catch {
+      error = 'Failed to send message. Please try again.'
     } finally { loading = false }
   }
 
@@ -67,6 +71,9 @@
     {/each}
     {#if loading}
       <div style="align-self:flex-start;color:#666;font-size:14px">...</div>
+    {/if}
+    {#if error}
+      <p role="alert" style="color:#f87171;font-size:13px;padding:0 4px">{error}</p>
     {/if}
   </div>
 

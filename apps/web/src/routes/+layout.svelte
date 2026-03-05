@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { onMount } from 'svelte'
-  import { user, loadUser } from '$lib/stores/auth.js'
-  const apiBase = import.meta.env.PUBLIC_API_URL ?? 'http://localhost:8744'
+import { loadUser, user } from '$lib/stores/auth.js';
+import { onMount } from 'svelte';
+const apiBase = import.meta.env.PUBLIC_API_URL ?? 'http://localhost:8744';
 
-  onMount(loadUser)
+onMount(loadUser);
 </script>
 
 {#if $user}

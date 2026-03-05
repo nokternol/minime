@@ -1,28 +1,30 @@
 <script lang="ts">
-  import { onMount } from 'svelte'
-  import { goto } from '$app/navigation'
-  import { api } from '$lib/api.js'
-  import EntryList from '$lib/components/EntryList.svelte'
-  import type { IndexEntry } from '$lib/api.js'
+import { goto } from '$app/navigation';
+import { api } from '$lib/api.js';
+import type { IndexEntry } from '$lib/api.js';
+import EntryList from '$lib/components/EntryList.svelte';
+import { onMount } from 'svelte';
 
-  const TYPES = ['all', 'idea', 'plan', 'discussion', 'solution', 'insight']
-  let activeType = 'all'
-  let query = ''
-  let entries: IndexEntry[] = []
-  let inflightCount = 0
+const TYPES = ['all', 'idea', 'plan', 'discussion', 'solution', 'insight'];
+const activeType = 'all';
+const query = '';
+let entries: IndexEntry[] = [];
+let inflightCount = 0;
 
-  async function load() {
-    const [items, inflight] = await Promise.all([
-      api.content({ type: activeType === 'all' ? undefined : activeType, q: query || undefined }),
-      api.inflight(),
-    ])
-    entries = items
-    inflightCount = inflight.length
-  }
+async function load() {
+  const [items, inflight] = await Promise.all([
+    api.content({ type: activeType === 'all' ? undefined : activeType, q: query || undefined }),
+    api.inflight(),
+  ]);
+  entries = items;
+  inflightCount = inflight.length;
+}
 
-  onMount(load)
+onMount(load);
 
-  function onSelect(entry: IndexEntry) { goto(`/chat/${entry.id}`) }
+function onSelect(entry: IndexEntry) {
+  goto(`/chat/${entry.id}`);
+}
 </script>
 
 <div style="max-width:480px;margin:0 auto;font-family:system-ui;background:#0f0f0f;min-height:100vh;color:#fff">

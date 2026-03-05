@@ -1,7 +1,7 @@
-import { setupServer } from 'msw/node'
-import { http, HttpResponse } from 'msw'
+import { http, HttpResponse } from 'msw';
+import { setupServer } from 'msw/node';
 
-const BASE = 'http://localhost:8744'
+const BASE = 'http://localhost:8744';
 
 export const server = setupServer(
   http.get(`${BASE}/auth/me`, () =>
@@ -33,7 +33,5 @@ export const server = setupServer(
   http.patch(`${BASE}/api/content/:id`, () => HttpResponse.json({ ok: true })),
   http.post(`${BASE}/api/content/:id/commit`, () => HttpResponse.json({ ok: true })),
   http.post(`${BASE}/api/content/:id/dismiss`, () => HttpResponse.json({ ok: true })),
-  http.post(`${BASE}/api/chat`, () =>
-    HttpResponse.json({ reply: 'Hello', context: [] })
-  ),
-)
+  http.post(`${BASE}/api/chat`, () => HttpResponse.json({ reply: 'Hello', context: [] }))
+);

@@ -1,8 +1,8 @@
 <script lang="ts">
-  import StatusDot from './StatusDot.svelte'
-  import type { IndexEntry } from '$lib/api.js'
-  export let entries: IndexEntry[]
-  export let onSelect: (entry: IndexEntry) => void
+import type { IndexEntry } from '$lib/api.js';
+import StatusDot from './StatusDot.svelte';
+export let entries: IndexEntry[];
+export let onSelect: (entry: IndexEntry) => void;
 </script>
 
 <ul style="list-style:none;padding:0;margin:0">

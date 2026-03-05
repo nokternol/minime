@@ -41,9 +41,9 @@ export class IndexCache {
   }
 
   upsert(entry: IndexEntry): void {
-    const idx = this.entries.findIndex((e) => e.id === entry.id)
-    if (idx >= 0) this.entries[idx] = entry
-    else this.entries.unshift(entry)
+    const idx = this.entries.findIndex((e) => e.id === entry.id);
+    if (idx >= 0) this.entries[idx] = entry;
+    else this.entries.unshift(entry);
   }
 
   getLastBuilt(): Date | null {

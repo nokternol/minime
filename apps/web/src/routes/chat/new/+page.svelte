@@ -1,24 +1,26 @@
 <script lang="ts">
-  import { goto } from '$app/navigation'
-  import { api } from '$lib/api.js'
+import { goto } from '$app/navigation';
+import { api } from '$lib/api.js';
 
-  let title = ''
-  let body = ''
-  let saving = false
-  let error = ''
+const title = '';
+const body = '';
+let saving = false;
+let error = '';
 
-  async function capture() {
-    if (!title.trim()) return
-    saving = true
-    error = ''
-    try {
-      const fm = await api.summarise(body || title)
-      const { id } = await api.capture({ type: 'idea', title, tags: [], summary: fm.summary, body })
-      goto(`/chat/${id}`)
-    } catch {
-      error = 'Something went wrong. Please try again.'
-    } finally { saving = false }
+async function capture() {
+  if (!title.trim()) return;
+  saving = true;
+  error = '';
+  try {
+    const fm = await api.summarise(body || title);
+    const { id } = await api.capture({ type: 'idea', title, tags: [], summary: fm.summary, body });
+    goto(`/chat/${id}`);
+  } catch {
+    error = 'Something went wrong. Please try again.';
+  } finally {
+    saving = false;
   }
+}
 </script>
 
 <div style="max-width:480px;margin:0 auto;padding:16px;font-family:system-ui;background:#0f0f0f;min-height:100vh;color:#fff">

@@ -3,7 +3,6 @@
   import { api } from '$lib/api.js'
 
   let title = ''
-  let type: 'idea' | 'plan' | 'discussion' | 'solution' = 'idea'
   let body = ''
   let saving = false
 
@@ -12,7 +11,7 @@
     saving = true
     try {
       const fm = await api.summarise(body || title)
-      const { id } = await api.capture({ type, title, tags: [], summary: fm.summary, body })
+      const { id } = await api.capture({ type: 'idea', title, tags: [], summary: fm.summary, body })
       goto(`/chat/${id}`)
     } finally { saving = false }
   }
@@ -23,13 +22,6 @@
     <a href="/" style="color:#aaa;text-decoration:none">←</a>
     <strong>New capture</strong>
   </header>
-
-  <select bind:value={type} style="width:100%;background:#111;border:1px solid #333;color:#fff;padding:8px;border-radius:6px;margin-bottom:8px">
-    <option value="idea">Idea</option>
-    <option value="plan">Plan</option>
-    <option value="discussion">Discussion</option>
-    <option value="solution">Solution</option>
-  </select>
 
   <input bind:value={title} placeholder="Title..."
     style="width:100%;background:#111;border:1px solid #333;color:#fff;padding:8px;border-radius:6px;margin-bottom:8px;font-size:16px;box-sizing:border-box" />

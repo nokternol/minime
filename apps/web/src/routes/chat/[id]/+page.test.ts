@@ -74,4 +74,21 @@ describe('/chat/[id]', () => {
       expect(calls).toEqual(['summarise', 'patch', 'commit'])
     )
   })
+
+  test('shows error message when chat send fails', async () => {
+    server.use(
+      http.post('http://localhost:8744/api/chat', () =>
+        HttpResponse.json({ error: 'server error' }, { status: 500 })
+      )
+    )
+
+    render(Page)
+    await waitFor(() => screen.getByPlaceholderText(/message/i))
+    await userEvent.type(screen.getByPlaceholderText(/message/i), 'hello')
+    await userEvent.keyboard('{Enter}')
+
+    await waitFor(() =>
+      expect(screen.getByRole('alert')).toBeInTheDocument()
+    )
+  })
 })

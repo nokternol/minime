@@ -26,4 +26,20 @@ describe('/chat/new', () => {
 
     await waitFor(() => expect(capturedBody.type).toBe('idea'))
   })
+
+  test('shows error message when capture API returns 500', async () => {
+    server.use(
+      http.post('http://localhost:8744/api/capture', () =>
+        HttpResponse.json({ error: 'server error' }, { status: 500 })
+      )
+    )
+
+    render(Page)
+    await userEvent.type(screen.getByPlaceholderText(/title/i), 'Bad idea')
+    await userEvent.click(screen.getByRole('button', { name: /capture/i }))
+
+    await waitFor(() =>
+      expect(screen.getByRole('alert')).toBeInTheDocument()
+    )
+  })
 })

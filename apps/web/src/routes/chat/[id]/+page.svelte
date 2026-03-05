@@ -12,7 +12,9 @@
   let contextTitles: string[] = []
   let error = ''
 
-  const id = $page.params.id!
+  const idParam = $page.params.id
+  if (!idParam) throw new Error('Missing route param: id')
+  const id = idParam
 
   onMount(async () => {
     item = await api.contentById(id)

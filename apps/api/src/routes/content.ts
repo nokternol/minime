@@ -43,7 +43,7 @@ export function contentRoutes(cache: IndexCache, github: GitHubClient) {
       : content
 
     const { data, content: body } = matter(decoded)
-    return c.json({ ...data, body, path: entry.path })
+    return c.json({ ...entry, ...data, body })
   })
 
   return app

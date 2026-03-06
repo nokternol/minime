@@ -30,8 +30,8 @@ echo "════════════════════════�
 echo "  Minime quality checks"
 echo "════════════════════════════════════"
 
-# Biome: lint + format check (read-only — no auto-mutate; --write is intentionally absent)
-run_step "Biome lint + format" npx biome check .
+# Biome: lint + format check (read-only — no auto-mutate; biome ci exits non-zero on any violation)
+run_step "Biome lint + format" npx biome ci .
 
 # TypeScript: typecheck per app
 if [ -f "apps/api/tsconfig.json" ]; then

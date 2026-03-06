@@ -30,10 +30,10 @@ echo "════════════════════════�
 echo "  Minime quality checks"
 echo "════════════════════════════════════"
 
-# Biome: lint + format check
-run_step "Biome lint + format" npx biome check --write .
+# Biome: lint + format check (read-only — no auto-mutate; --write is intentionally absent)
+run_step "Biome lint + format" npx biome check .
 
-# TypeScript: typecheck per app (added as apps are scaffolded)
+# TypeScript: typecheck per app
 if [ -f "apps/api/tsconfig.json" ]; then
   run_step "TypeScript (api)" bash -c "cd apps/api && npx tsc --noEmit"
 fi
@@ -42,9 +42,23 @@ if [ -f "apps/web/tsconfig.json" ]; then
   run_step "TypeScript (web)" bash -c "cd apps/web && npx tsc --noEmit"
 fi
 
-# Tests: per app (added as tests are written)
+# Svelte: sync + check
+if [ -f "apps/web/package.json" ]; then
+  run_step "Svelte check" bash -c "cd apps/web && npx svelte-kit sync && npx svelte-check --tsconfig ./tsconfig.json"
+fi
+
+# Tests: per app
 if [ -f "apps/api/package.json" ] && grep -q '"test"' apps/api/package.json; then
   run_step "Tests (api)" bash -c "cd apps/api && npx vitest run --passWithNoTests"
+fi
+
+if [ -f "apps/web/package.json" ] && grep -q '"test"' apps/web/package.json; then
+  run_step "Tests (web)" bash -c "cd apps/web && npx vitest run --passWithNoTests"
+fi
+
+# Web build: catches Svelte compile errors that svelte-check misses
+if [ -f "apps/web/package.json" ]; then
+  run_step "Web build" bash -c "cd apps/web && npx vite build"
 fi
 
 echo ""

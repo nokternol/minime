@@ -2,7 +2,9 @@
 import { goto } from '$app/navigation';
 import { api } from '$lib/api.js';
 
+// biome-ignore lint/style/useConst: Svelte bind:value requires let (two-way binding mutates these)
 let title = '';
+// biome-ignore lint/style/useConst: Svelte bind:value requires let (two-way binding mutates these)
 let body = '';
 let saving = false;
 let error = '';

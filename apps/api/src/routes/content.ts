@@ -7,7 +7,7 @@ import type { IndexCache } from '../store/index-cache.js';
 import { requireAuth } from './auth.js';
 
 const patchSchema = z.object({
-  session_summary: z.string().max(2000),
+  session_summary: z.string().min(1).max(2000),
 });
 
 export function contentRoutes(cache: IndexCache, github: GitHubClient) {

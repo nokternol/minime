@@ -55,7 +55,7 @@ export function parseFrontmatter(content: string, path: string): IndexEntry {
   return { ...(entry as Omit<IndexEntry, 'path'>), path };
 }
 
-const CONTENT_DIRS = ['ideas', 'plans', 'discussions', 'solutions'] as const;
+const CONTENT_DIRS = ['ideas', 'plans', 'discussions', 'solutions', 'insights'] as const;
 
 export async function buildIndex(github: GitHubClient): Promise<IndexEntry[]> {
   const entries: IndexEntry[] = [];

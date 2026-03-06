@@ -1,7 +1,7 @@
 import { ulid } from 'ulid';
 
 export interface CaptureInput {
-  type: 'idea' | 'plan' | 'discussion' | 'solution';
+  type: 'idea' | 'plan' | 'discussion' | 'solution' | 'insight';
   title: string;
   tags: string[];
   summary: string;

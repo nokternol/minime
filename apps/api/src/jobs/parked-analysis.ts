@@ -1,4 +1,3 @@
-import { ulid } from 'ulid';
 import { buildDocument } from '../content/document.js';
 import type { GitHubClient } from '../github/client.js';
 import type { LLMRouter } from '../llm/router.js';
@@ -32,19 +31,18 @@ ${summariesText}`
 
   for (const pattern of patterns) {
     if (pattern.ids.length < 3) continue;
-    const id = ulid();
     const title = `Pattern: ${pattern.theme}`;
     const body = `## Recurring Theme Detected\n\n${pattern.insight}\n\n## Related Ideas\n\n${pattern.ids.map((i) => `- ${i}`).join('\n')}`;
     const doc = buildDocument({
-      type: 'idea',
+      type: 'insight',
       title,
       tags: ['insight', 'pattern', 'adhd'],
       summary: pattern.insight,
       body,
     });
-    const branchName = `insight/${id.toLowerCase()}-pattern`;
+    const branchName = `insight/${doc.id.toLowerCase()}-pattern`;
     await github.createBranch(branchName);
-    await github.upsertFile(doc.path, body, `insight: ${title}`, branchName);
+    await github.upsertFile(doc.path, doc.content, `insight: ${title}`, branchName);
     await github.createPR(`[insight] ${title}`, branchName);
     console.log(`Parked analysis: created insight PR for theme "${pattern.theme}"`);
   }

@@ -5,8 +5,12 @@ services:
     restart: unless-stopped
     ports:
       - "${API_PORT:-8744}:8744"
+    volumes:
+      - sessions-data:/data/sessions
     environment:
       API_PORT: "8744"
+      NODE_ENV: "production"
+      SESSIONS_FILE: "/data/sessions/sessions.json"
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
       ALLOWED_GOOGLE_EMAIL: ${ALLOWED_GOOGLE_EMAIL}
@@ -18,6 +22,8 @@ services:
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
       GEMINI_API_KEY: ${GEMINI_API_KEY}
       PARKED_ANALYSIS_CRON: ${PARKED_ANALYSIS_CRON:-0 9 * * 1}
+      PWA_ORIGIN: ${PWA_ORIGIN}
+      PUBLIC_URL: ${PUBLIC_URL}
 
   web:
     build:
@@ -26,7 +32,11 @@ services:
     ports:
       - "${PWA_PORT:-8743}:8743"
     environment:
+      NODE_ENV: "production"
       PORT: "8743"
-      PUBLIC_API_URL: ${PUBLIC_API_URL:-http://api:8744}
+      PUBLIC_API_URL: ${PUBLIC_API_URL}
     depends_on:
       - api
+
+volumes:
+  sessions-data:

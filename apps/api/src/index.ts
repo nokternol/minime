@@ -49,6 +49,7 @@ const googleAuth = new GoogleAuth(
 );
 
 app.route('/', authRoutes(googleAuth));
+requireEnv('SESSION_SECRET');
 app.route('/', webhookRoutes(cache, requireEnv('GITHUB_WEBHOOK_SECRET')));
 app.route('/', contentRoutes(cache, github));
 app.route('/', lifecycleRoutes(github, cache));

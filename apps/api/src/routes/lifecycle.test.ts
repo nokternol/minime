@@ -125,6 +125,21 @@ describe('POST /api/content/:id/commit', () => {
     expect(mockGithub.mergePR).toHaveBeenCalledWith(7);
     expect(mockGithub.deleteBranch).toHaveBeenCalledWith('idea/abc');
   });
+
+  it('updates cache to remove pr after successful commit', async () => {
+    vi.mocked(mockCache.upsert).mockClear();
+    await post('/api/content/idea-1/commit');
+    expect(mockCache.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'idea-1', pr: undefined, branch: undefined })
+    );
+  });
+
+  it('returns 200 even if deleteBranch fails after merge', async () => {
+    vi.mocked(mockGithub.mergePR).mockResolvedValueOnce({} as never);
+    vi.mocked(mockGithub.deleteBranch).mockRejectedValueOnce(new Error('branch not found'));
+    const res = await post('/api/content/idea-1/commit');
+    expect(res.status).toBe(200);
+  });
 });
 
 describe('POST /api/content/:id/dismiss', () => {
@@ -140,6 +155,14 @@ describe('POST /api/content/:id/dismiss', () => {
     expect(res.status).toBe(200);
     expect(mockGithub.closePR).toHaveBeenCalledWith(7);
     expect(mockGithub.deleteBranch).toHaveBeenCalledWith('idea/abc');
+  });
+
+  it('updates cache to remove pr after successful dismiss', async () => {
+    vi.mocked(mockCache.upsert).mockClear();
+    await post('/api/content/idea-1/dismiss');
+    expect(mockCache.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'idea-1', pr: undefined, branch: undefined, status: 'dismissed' })
+    );
   });
 });
 

@@ -64,8 +64,19 @@ export function lifecycleRoutes(github: GitHubClient, cache: IndexCache) {
   app.post('/api/content/:id/commit', requireAuth(), async (c) => {
     const entry = cache.findById(c.req.param('id'));
     if (!entry?.pr) return c.json({ error: 'no open PR' }, 404);
-    await github.mergePR(entry.pr);
-    if (entry.branch) await github.deleteBranch(entry.branch);
+    try {
+      await github.mergePR(entry.pr);
+    } catch (err) {
+      console.error('[commit] mergePR failed', err);
+      return c.json({ error: 'Internal server error' }, 500);
+    }
+    try {
+      if (entry.branch) await github.deleteBranch(entry.branch);
+    } catch (err) {
+      // Branch deletion failure is non-fatal — PR is already merged
+      console.warn('[commit] deleteBranch failed (non-fatal)', err);
+    }
+    cache.upsert({ ...entry, pr: undefined, branch: undefined, status: 'done' });
     return c.json({ ok: true });
   });
 
@@ -73,8 +84,18 @@ export function lifecycleRoutes(github: GitHubClient, cache: IndexCache) {
   app.post('/api/content/:id/dismiss', requireAuth(), async (c) => {
     const entry = cache.findById(c.req.param('id'));
     if (!entry?.pr) return c.json({ error: 'no open PR' }, 404);
-    await github.closePR(entry.pr);
-    if (entry.branch) await github.deleteBranch(entry.branch);
+    try {
+      await github.closePR(entry.pr);
+    } catch (err) {
+      console.error('[dismiss] closePR failed', err);
+      return c.json({ error: 'Internal server error' }, 500);
+    }
+    try {
+      if (entry.branch) await github.deleteBranch(entry.branch);
+    } catch (err) {
+      console.warn('[dismiss] deleteBranch failed (non-fatal)', err);
+    }
+    cache.upsert({ ...entry, pr: undefined, branch: undefined, status: 'dismissed' });
     return c.json({ ok: true });
   });
 

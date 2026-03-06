@@ -12,11 +12,13 @@
     "@anthropic-ai/sdk": "^0.39.0",
     "@google/generative-ai": "^0.21.0",
     "@hono/node-server": "^1.13.0",
+    "@hono/zod-validator": "^0.7.6",
     "google-auth-library": "^9.0.0",
     "gray-matter": "^4.0.3",
     "hono": "^4.6.0",
     "node-cron": "^3.0.3",
-    "ulid": "^2.3.0"
+    "ulid": "^2.3.0",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

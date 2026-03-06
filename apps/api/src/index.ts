@@ -1,5 +1,6 @@
 import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
+import { bodyLimit } from 'hono/body-limit';
 import { cors } from 'hono/cors';
 import cron from 'node-cron';
 import { GoogleAuth } from './auth/google.js';
@@ -21,10 +22,16 @@ function requireEnv(name: string): string {
 
 const app = new Hono();
 
+app.onError((err, c) => {
+  console.error('[api-error]', err);
+  return c.json({ error: 'Internal server error' }, 500);
+});
+
 app.use(
   '*',
   cors({ origin: process.env.PWA_ORIGIN ?? 'http://localhost:8743', credentials: true })
 );
+app.use('*', bodyLimit({ maxSize: 1 * 1024 * 1024 })); // 1 MB global limit
 
 const github = new GitHubClient(
   requireEnv('GITHUB_TOKEN'),

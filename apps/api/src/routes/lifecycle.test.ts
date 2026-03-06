@@ -75,6 +75,22 @@ describe('POST /api/capture', () => {
     expect(res.status).toBe(401);
   });
 
+  it('returns 400 for invalid type', async () => {
+    const res = await post('/api/capture', {
+      type: '../../evil',
+      title: 'Escape',
+      tags: [],
+      summary: 's',
+      body: 'b',
+    });
+    expect(res.status).toBe(400);
+  });
+
+  it('returns 400 for missing title', async () => {
+    const res = await post('/api/capture', { type: 'idea', tags: [], summary: 's', body: 'b' });
+    expect(res.status).toBe(400);
+  });
+
   it('creates branch, file, and PR then returns ids', async () => {
     const res = await post('/api/capture', {
       type: 'idea',

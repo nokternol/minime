@@ -1,16 +1,39 @@
+import { zValidator } from '@hono/zod-validator';
 import matter from 'gray-matter';
 import { Hono } from 'hono';
+import { z } from 'zod';
 import { buildDocument } from '../content/document.js';
 import type { GitHubClient } from '../github/client.js';
 import type { IndexCache } from '../store/index-cache.js';
 import { requireAuth } from './auth.js';
 
+// eslint-disable-next-line no-control-regex
+const NULL_CHAR_RE = new RegExp(String.fromCharCode(0), 'g');
+const SAFE_STRING = (max: number) =>
+  z
+    .string()
+    .min(1)
+    .max(max)
+    .transform((s) => s.replace(NULL_CHAR_RE, '').trim());
+
+const captureSchema = z.object({
+  type: z.enum(['idea', 'plan', 'discussion', 'solution']),
+  title: SAFE_STRING(200),
+  tags: z.array(z.string().max(50)).max(20).default([]),
+  summary: z.string().max(500).default(''),
+  body: z.string().max(50000).default(''),
+  related_to: z.string().optional(),
+  promoted_from: z.array(z.string()).optional(),
+  language: z.string().max(50).optional(),
+  problem: z.string().max(2000).optional(),
+});
+
 export function lifecycleRoutes(github: GitHubClient, cache: IndexCache) {
   const app = new Hono();
 
   // Capture new item
-  app.post('/api/capture', requireAuth(), async (c) => {
-    const input = await c.req.json();
+  app.post('/api/capture', requireAuth(), zValidator('json', captureSchema), async (c) => {
+    const input = c.req.valid('json');
     try {
       const doc = buildDocument(input);
       await github.createBranch(doc.branchName);
@@ -33,7 +56,7 @@ export function lifecycleRoutes(github: GitHubClient, cache: IndexCache) {
       return c.json({ id: doc.id, path: doc.path, pr: pr.number, branch: doc.branchName });
     } catch (err) {
       console.error('[capture]', err);
-      return c.json({ error: String(err) }, 500);
+      return c.json({ error: 'Internal server error' }, 500);
     }
   });
 

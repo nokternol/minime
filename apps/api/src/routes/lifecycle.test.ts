@@ -161,7 +161,12 @@ describe('POST /api/content/:id/dismiss', () => {
     vi.mocked(mockCache.upsert).mockClear();
     await post('/api/content/idea-1/dismiss');
     expect(mockCache.upsert).toHaveBeenCalledWith(
-      expect.objectContaining({ id: 'idea-1', pr: undefined, branch: undefined, status: 'dismissed' })
+      expect.objectContaining({
+        id: 'idea-1',
+        pr: undefined,
+        branch: undefined,
+        status: 'dismissed',
+      })
     );
   });
 });

@@ -27,7 +27,11 @@ describe('runParkedAnalysis', () => {
       generate: vi.fn().mockResolvedValue(
         JSON.stringify({
           patterns: [
-            { theme: 'Focus', ids: ['id-0', 'id-1', 'id-2'], insight: 'You keep returning to focus.' },
+            {
+              theme: 'Focus',
+              ids: ['id-0', 'id-1', 'id-2'],
+              insight: 'You keep returning to focus.',
+            },
           ],
         })
       ),

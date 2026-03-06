@@ -135,7 +135,9 @@ describe('POST /api/content/:id/park', () => {
 
   it('updates frontmatter to parked status and calls upsertFile', async () => {
     vi.mocked(mockGithub.getFile).mockResolvedValueOnce({
-      content: Buffer.from('---\nid: "idea-1"\ntitle: "T"\nstatus: "draft"\ntype: "idea"\ntags: []\nsummary: "s"\ncreated: ""\nupdated: ""\nbranch: "idea/abc"\n---\n\nbody').toString('base64'),
+      content: Buffer.from(
+        '---\nid: "idea-1"\ntitle: "T"\nstatus: "draft"\ntype: "idea"\ntags: []\nsummary: "s"\ncreated: ""\nupdated: ""\nbranch: "idea/abc"\n---\n\nbody'
+      ).toString('base64'),
       encoding: 'base64',
       sha: 'abc123',
     });

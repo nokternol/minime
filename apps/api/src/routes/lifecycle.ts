@@ -1,5 +1,5 @@
-import { Hono } from 'hono';
 import matter from 'gray-matter';
+import { Hono } from 'hono';
 import { buildDocument } from '../content/document.js';
 import type { GitHubClient } from '../github/client.js';
 import type { IndexCache } from '../store/index-cache.js';

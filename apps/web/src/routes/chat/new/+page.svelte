@@ -2,8 +2,8 @@
 import { goto } from '$app/navigation';
 import { api } from '$lib/api.js';
 
-const title = '';
-const body = '';
+let title = '';
+let body = '';
 let saving = false;
 let error = '';
 

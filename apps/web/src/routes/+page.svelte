@@ -6,8 +6,8 @@ import EntryList from '$lib/components/EntryList.svelte';
 import { onMount } from 'svelte';
 
 const TYPES = ['all', 'idea', 'plan', 'discussion', 'solution', 'insight'];
-const activeType = 'all';
-const query = '';
+let activeType = 'all';
+let query = '';
 let entries: IndexEntry[] = [];
 let inflightCount = 0;
 

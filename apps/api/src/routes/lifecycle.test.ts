@@ -37,6 +37,7 @@ const mockGithub = {
   mergePR: vi.fn().mockResolvedValue({}),
   closePR: vi.fn().mockResolvedValue({}),
   deleteBranch: vi.fn().mockResolvedValue({}),
+  getFile: vi.fn(),
 } as unknown as GitHubClient;
 
 const mockAuth = {
@@ -132,9 +133,23 @@ describe('POST /api/content/:id/park', () => {
     expect(res.status).toBe(404);
   });
 
-  it('returns ok for known entry', async () => {
+  it('updates frontmatter to parked status and calls upsertFile', async () => {
+    vi.mocked(mockGithub.getFile).mockResolvedValueOnce({
+      content: Buffer.from('---\nid: "idea-1"\ntitle: "T"\nstatus: "draft"\ntype: "idea"\ntags: []\nsummary: "s"\ncreated: ""\nupdated: ""\nbranch: "idea/abc"\n---\n\nbody').toString('base64'),
+      encoding: 'base64',
+      sha: 'abc123',
+    });
+    vi.mocked(mockGithub.upsertFile).mockClear();
+    vi.mocked(mockCache.upsert).mockClear();
+
     const res = await post('/api/content/idea-1/park');
     expect(res.status).toBe(200);
-    expect(await res.json()).toMatchObject({ ok: true });
+    expect(await res.json()).toEqual({ ok: true });
+    expect(mockGithub.upsertFile).toHaveBeenCalledTimes(1);
+    const [, content] = vi.mocked(mockGithub.upsertFile).mock.calls[0];
+    expect(content).toContain('status: parked');
+    expect(mockCache.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'idea-1', status: 'parked' })
+    );
   });
 });

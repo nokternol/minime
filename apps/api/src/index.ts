@@ -48,8 +48,8 @@ const googleAuth = new GoogleAuth(
   requireEnv('ALLOWED_GOOGLE_EMAIL')
 );
 
-app.route('/', authRoutes(googleAuth));
 requireEnv('SESSION_SECRET');
+app.route('/', authRoutes(googleAuth));
 app.route('/', webhookRoutes(cache, requireEnv('GITHUB_WEBHOOK_SECRET')));
 app.route('/', contentRoutes(cache, github));
 app.route('/', lifecycleRoutes(github, cache));

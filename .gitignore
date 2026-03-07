@@ -13,3 +13,7 @@ coverage/
 
 # Worktrees
 .worktrees/
+
+# Storybook
+storybook-static/
+.storybook/cache/

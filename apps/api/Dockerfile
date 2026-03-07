@@ -1,6 +1,5 @@
 FROM node:22-alpine AS build
 WORKDIR /app
-ENV HUSKY=0
 COPY package.json package-lock.json ./
 COPY apps/api/package.json apps/api/
 RUN npm ci --workspace=apps/api
@@ -9,7 +8,6 @@ RUN npm run build -w @minime/api
 
 FROM node:22-alpine AS prod-deps
 WORKDIR /app
-ENV HUSKY=0
 COPY package.json package-lock.json ./
 COPY apps/api/package.json apps/api/
 RUN npm ci --workspace=apps/api --omit=dev

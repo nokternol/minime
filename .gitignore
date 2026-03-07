@@ -10,3 +10,10 @@ npm-debug.log*
 Thumbs.db
 *.tsbuildinfo
 coverage/
+
+# Worktrees
+.worktrees/
+
+# Storybook
+storybook-static/
+.storybook/cache/

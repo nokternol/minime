@@ -1,9 +1,7 @@
 {
   "name": "minime",
   "private": true,
-  "workspaces": [
-    "apps/*"
-  ],
+  "workspaces": ["apps/*"],
   "scripts": {
     "dev": "docker compose up",
     "build": "docker compose build",
@@ -18,8 +16,6 @@
     "lint-staged": "^16.3.2"
   },
   "msw": {
-    "workerDirectory": [
-      "apps/web/static"
-    ]
+    "workerDirectory": ["apps/web/static"]
   }
 }

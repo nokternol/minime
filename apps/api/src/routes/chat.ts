@@ -44,8 +44,9 @@ export function chatRoutes(llm: LLMRouter, cache: IndexCache) {
       const summary = await llm.summarise(conversation);
       return c.json({ summary });
     } catch (err) {
-      console.error('[summarise]', err);
-      return c.json({ error: 'Internal server error' }, 500);
+      const traceId = crypto.randomUUID().slice(0, 8);
+      console.error(`[summarise] traceId=${traceId}`, err);
+      return c.json({ error: 'Internal server error', traceId }, 500);
     }
   });
 

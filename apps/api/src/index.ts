@@ -25,8 +25,9 @@ function requireEnv(name: string): string {
 const app = new Hono();
 
 app.onError((err, c) => {
-  console.error('[api-error]', err);
-  return c.json({ error: 'Internal server error' }, 500);
+  const traceId = crypto.randomUUID().slice(0, 8);
+  console.error(`[api-error] traceId=${traceId}`, err);
+  return c.json({ error: 'Internal server error', traceId }, 500);
 });
 
 app.use(

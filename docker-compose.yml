@@ -5,6 +5,12 @@ services:
     restart: unless-stopped
     ports:
       - "${API_PORT:-8744}:8744"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:8744/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
     volumes:
       - sessions-data:/data/sessions
     environment:
@@ -36,7 +42,8 @@ services:
       PORT: "8743"
       PUBLIC_API_URL: ${PUBLIC_API_URL}
     depends_on:
-      - api
+      api:
+        condition: service_healthy
 
 volumes:
   sessions-data:

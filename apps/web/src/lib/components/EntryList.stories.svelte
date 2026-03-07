@@ -1,6 +1,5 @@
 <script module>
 import { defineMeta } from '@storybook/addon-svelte-csf';
-import { withAuth } from '../../../.storybook/decorators.js';
 import EntryList from './EntryList.svelte';
 
 const mockEntries = [
@@ -42,7 +41,6 @@ const mockEntries = [
 const { Story } = defineMeta({
   title: 'Components/EntryList',
   component: EntryList,
-  decorators: [withAuth],
   // onSelect is a callback prop — Storybook Actions auto-generates a spy for it.
   // Clicking a row calls onSelect(entry) internally and the spy logs it to the Actions panel.
 });

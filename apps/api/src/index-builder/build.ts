@@ -55,42 +55,48 @@ export function parseFrontmatter(content: string, path: string): IndexEntry {
   return { ...(entry as Omit<IndexEntry, 'path'>), path };
 }
 
-const CONTENT_DIRS = ['ideas', 'plans', 'discussions', 'solutions'] as const;
+const CONTENT_DIRS = ['ideas', 'plans', 'discussions', 'solutions', 'insights'] as const;
+
+async function fetchEntry(
+  github: GitHubClient,
+  file: { path: string; type: string }
+): Promise<IndexEntry | null> {
+  if (file.type !== 'file' || !file.path.endsWith('.md')) return null;
+  try {
+    const { content, encoding } = await github.getFile(file.path);
+    const decoded =
+      encoding === 'base64' ? Buffer.from(content, 'base64').toString('utf-8') : content;
+    const entry = parseFrontmatter(decoded, file.path);
+    if (!entry.id || !entry.type || !entry.title) {
+      console.warn(`[index-builder] skipping ${file.path}: missing required frontmatter fields`);
+      return null;
+    }
+    return entry;
+  } catch (err) {
+    console.warn(
+      `[index-builder] skipping ${file.path}:`,
+      err instanceof Error ? err.message : err
+    );
+    return null;
+  }
+}
 
 export async function buildIndex(github: GitHubClient): Promise<IndexEntry[]> {
-  const entries: IndexEntry[] = [];
+  const dirResults = await Promise.allSettled(
+    CONTENT_DIRS.map((dir) => github.listFiles(dir))
+  );
 
-  for (const dir of CONTENT_DIRS) {
-    let files: Array<{ path: string; type: string }> = [];
-    try {
-      files = await github.listFiles(dir);
-    } catch {
-      // directory may not exist yet — skip silently
-      continue;
-    }
+  const fileResults = await Promise.allSettled(
+    dirResults.flatMap((result, i) => {
+      if (result.status === 'rejected') return []; // directory may not exist yet
+      return result.value.map((file) => fetchEntry(github, file));
+    })
+  );
 
-    for (const file of files) {
-      if (file.type !== 'file' || !file.path.endsWith('.md')) continue;
-      try {
-        const { content, encoding } = await github.getFile(file.path);
-        const decoded =
-          encoding === 'base64' ? Buffer.from(content, 'base64').toString('utf-8') : content;
-        const entry = parseFrontmatter(decoded, file.path);
-        if (!entry.id || !entry.type || !entry.title) {
-          console.warn(
-            `[index-builder] skipping ${file.path}: missing required frontmatter fields`
-          );
-          continue;
-        }
-        entries.push(entry);
-      } catch (err) {
-        console.warn(
-          `[index-builder] skipping ${file.path}:`,
-          err instanceof Error ? err.message : err
-        );
-      }
-    }
-  }
+  const entries = fileResults
+    .filter((r): r is PromiseFulfilledResult<IndexEntry | null> => r.status === 'fulfilled')
+    .map((r) => r.value)
+    .filter((e): e is IndexEntry => e !== null);
 
   return entries.sort(
     (a, b) => new Date(b.updated as string).getTime() - new Date(a.updated as string).getTime()

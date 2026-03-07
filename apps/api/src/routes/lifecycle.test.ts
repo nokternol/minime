@@ -37,6 +37,7 @@ const mockGithub = {
   mergePR: vi.fn().mockResolvedValue({}),
   closePR: vi.fn().mockResolvedValue({}),
   deleteBranch: vi.fn().mockResolvedValue({}),
+  getFile: vi.fn(),
 } as unknown as GitHubClient;
 
 const mockAuth = {
@@ -74,6 +75,22 @@ describe('POST /api/capture', () => {
     expect(res.status).toBe(401);
   });
 
+  it('returns 400 for invalid type', async () => {
+    const res = await post('/api/capture', {
+      type: '../../evil',
+      title: 'Escape',
+      tags: [],
+      summary: 's',
+      body: 'b',
+    });
+    expect(res.status).toBe(400);
+  });
+
+  it('returns 400 for missing title', async () => {
+    const res = await post('/api/capture', { type: 'idea', tags: [], summary: 's', body: 'b' });
+    expect(res.status).toBe(400);
+  });
+
   it('creates branch, file, and PR then returns ids', async () => {
     const res = await post('/api/capture', {
       type: 'idea',
@@ -108,6 +125,21 @@ describe('POST /api/content/:id/commit', () => {
     expect(mockGithub.mergePR).toHaveBeenCalledWith(7);
     expect(mockGithub.deleteBranch).toHaveBeenCalledWith('idea/abc');
   });
+
+  it('updates cache to remove pr after successful commit', async () => {
+    vi.mocked(mockCache.upsert).mockClear();
+    await post('/api/content/idea-1/commit');
+    expect(mockCache.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'idea-1', pr: undefined, branch: undefined })
+    );
+  });
+
+  it('returns 200 even if deleteBranch fails after merge', async () => {
+    vi.mocked(mockGithub.mergePR).mockResolvedValueOnce({} as never);
+    vi.mocked(mockGithub.deleteBranch).mockRejectedValueOnce(new Error('branch not found'));
+    const res = await post('/api/content/idea-1/commit');
+    expect(res.status).toBe(200);
+  });
 });
 
 describe('POST /api/content/:id/dismiss', () => {
@@ -124,6 +156,19 @@ describe('POST /api/content/:id/dismiss', () => {
     expect(mockGithub.closePR).toHaveBeenCalledWith(7);
     expect(mockGithub.deleteBranch).toHaveBeenCalledWith('idea/abc');
   });
+
+  it('updates cache to remove pr after successful dismiss', async () => {
+    vi.mocked(mockCache.upsert).mockClear();
+    await post('/api/content/idea-1/dismiss');
+    expect(mockCache.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: 'idea-1',
+        pr: undefined,
+        branch: undefined,
+        status: 'dismissed',
+      })
+    );
+  });
 });
 
 describe('POST /api/content/:id/park', () => {
@@ -132,9 +177,25 @@ describe('POST /api/content/:id/park', () => {
     expect(res.status).toBe(404);
   });
 
-  it('returns ok for known entry', async () => {
+  it('updates frontmatter to parked status and calls upsertFile', async () => {
+    vi.mocked(mockGithub.getFile).mockResolvedValueOnce({
+      content: Buffer.from(
+        '---\nid: "idea-1"\ntitle: "T"\nstatus: "draft"\ntype: "idea"\ntags: []\nsummary: "s"\ncreated: ""\nupdated: ""\nbranch: "idea/abc"\n---\n\nbody'
+      ).toString('base64'),
+      encoding: 'base64',
+      sha: 'abc123',
+    });
+    vi.mocked(mockGithub.upsertFile).mockClear();
+    vi.mocked(mockCache.upsert).mockClear();
+
     const res = await post('/api/content/idea-1/park');
     expect(res.status).toBe(200);
-    expect(await res.json()).toMatchObject({ ok: true });
+    expect(await res.json()).toEqual({ ok: true });
+    expect(mockGithub.upsertFile).toHaveBeenCalledTimes(1);
+    const [, content] = vi.mocked(mockGithub.upsertFile).mock.calls[0];
+    expect(content).toContain('status: parked');
+    expect(mockCache.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'idea-1', status: 'parked' })
+    );
   });
 });

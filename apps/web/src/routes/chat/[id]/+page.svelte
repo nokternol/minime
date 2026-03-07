@@ -9,6 +9,7 @@ let item: ContentDetail | null = null;
 let messages: Array<{ role: 'user' | 'assistant'; content: string }> = [];
 let input = '';
 let loading = false;
+let finishing = false;
 let contextTitles: string[] = [];
 let error = '';
 
@@ -44,11 +45,19 @@ async function send() {
 }
 
 async function finish() {
-  const conversation = messages.map((m) => `${m.role}: ${m.content}`).join('\n');
-  const { summary } = await api.summarise(conversation);
-  await api.patch(id, { session_summary: summary });
-  await api.commit(id);
-  goto('/');
+  if (!confirm('Commit this session to GitHub?')) return;
+  finishing = true;
+  error = '';
+  try {
+    const conversation = messages.map((m) => `${m.role}: ${m.content}`).join('\n');
+    const { summary } = await api.summarise(conversation);
+    await api.patch(id, { session_summary: summary });
+    await api.commit(id);
+    goto('/');
+  } catch {
+    error = 'Failed to commit session. Please try again.';
+    finishing = false;
+  }
 }
 </script>
 
@@ -57,7 +66,7 @@ async function finish() {
     <a href="/" style="color:#aaa;text-decoration:none">←</a>
     <span style="flex:1;font-weight:500;font-size:14px">{item?.title ?? '...'}</span>
     {#if item?.pr}
-      <button on:click={finish} style="font-size:12px;background:#1a3a1a;color:#4ade80;border:1px solid #4ade80;padding:4px 10px;border-radius:6px;cursor:pointer">Commit ✓</button>
+      <button on:click={finish} disabled={finishing} style="font-size:12px;background:#1a3a1a;color:#4ade80;border:1px solid #4ade80;padding:4px 10px;border-radius:6px;cursor:pointer">{finishing ? '...' : 'Commit ✓'}</button>
     {/if}
   </header>
 

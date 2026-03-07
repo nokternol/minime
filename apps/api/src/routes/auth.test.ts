@@ -97,3 +97,23 @@ describe('authRoutes', () => {
     expect(await res.json()).toBeNull();
   });
 });
+
+describe('session cookie integrity', () => {
+  it('rejects a tampered session token', async () => {
+    // Get a valid signed session token from the callback
+    const app = buildApp();
+    const loginRes = await app.request('/auth/callback?code=x');
+    const cookieHeader = loginRes.headers.get('set-cookie') ?? '';
+    const match = cookieHeader.match(/session=([^;]+)/);
+    const validToken = match?.[1] ?? '';
+    expect(validToken).toBeTruthy();
+    // Token format is: uuid.hmac-hex — tamper the last character
+    const lastChar = validToken.slice(-1);
+    const tampered = validToken.slice(0, -1) + (lastChar === 'a' ? 'b' : 'a');
+
+    const res = await app.request('/auth/me', {
+      headers: { cookie: `session=${tampered}` },
+    });
+    expect(await res.json()).toBeNull();
+  });
+});

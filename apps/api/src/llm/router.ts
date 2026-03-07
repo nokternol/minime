@@ -12,13 +12,16 @@ Rules:
 - If the user says "deep dive" or "expand", you may respond fully
 `.trim();
 
+const GEMINI_FLASH_MODEL = 'gemini-flash-latest';
+
 export class LLMRouter {
   private claude: Anthropic;
-  private gemini: GoogleGenerativeAI;
+  private flashModel: ReturnType<GoogleGenerativeAI['getGenerativeModel']>;
 
   constructor(anthropicKey: string, geminiKey: string) {
     this.claude = new Anthropic({ apiKey: anthropicKey });
-    this.gemini = new GoogleGenerativeAI(geminiKey);
+    const gemini = new GoogleGenerativeAI(geminiKey);
+    this.flashModel = gemini.getGenerativeModel({ model: GEMINI_FLASH_MODEL });
   }
 
   async chat(
@@ -36,16 +39,14 @@ export class LLMRouter {
   }
 
   async summarise(content: string): Promise<string> {
-    const model = this.gemini.getGenerativeModel({ model: 'gemini-flash-latest' });
-    const result = await model.generateContent(
+    const result = await this.flashModel.generateContent(
       `Write a 2-3 sentence session summary of this conversation. Be specific about decisions made and next steps.\n\n${content}`
     );
     return result.response.text();
   }
 
   async generate(prompt: string): Promise<string> {
-    const model = this.gemini.getGenerativeModel({ model: 'gemini-2.0-flash' });
-    const result = await model.generateContent(prompt);
+    const result = await this.flashModel.generateContent(prompt);
     return result.response.text();
   }
 
@@ -54,8 +55,7 @@ export class LLMRouter {
     body: string,
     type: string
   ): Promise<{ tags: string[]; summary: string }> {
-    const model = this.gemini.getGenerativeModel({ model: 'gemini-flash-latest' });
-    const result = await model.generateContent(
+    const result = await this.flashModel.generateContent(
       `Given this ${type} titled "${title}", generate:
 1. A one-sentence summary (max 20 words)
 2. 3-5 lowercase tags

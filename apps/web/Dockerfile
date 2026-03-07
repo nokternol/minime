@@ -1,9 +1,8 @@
 FROM node:22-alpine AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
-COPY apps/api/package.json apps/api/
 COPY apps/web/package.json apps/web/
-RUN npm ci
+RUN npm ci --workspace=apps/web
 COPY apps/web apps/web
 RUN npm run build -w @minime/web
 

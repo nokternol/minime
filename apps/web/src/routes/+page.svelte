@@ -6,10 +6,11 @@ import EntryList from '$lib/components/EntryList.svelte';
 import { onMount } from 'svelte';
 
 const TYPES = ['all', 'idea', 'plan', 'discussion', 'solution', 'insight'];
-const activeType = 'all';
-const query = '';
+let activeType = 'all';
+let query = '';
 let entries: IndexEntry[] = [];
 let inflightCount = 0;
+let searchTimer: ReturnType<typeof setTimeout> | null = null;
 
 async function load() {
   const [items, inflight] = await Promise.all([
@@ -18,6 +19,11 @@ async function load() {
   ]);
   entries = items;
   inflightCount = inflight.length;
+}
+
+function onSearchInput() {
+  if (searchTimer !== null) clearTimeout(searchTimer);
+  searchTimer = setTimeout(load, 200);
 }
 
 onMount(load);
@@ -39,7 +45,7 @@ function onSelect(entry: IndexEntry) {
   <div style="padding:8px 16px;border-bottom:1px solid #222">
     <input
       bind:value={query}
-      on:input={load}
+      on:input={onSearchInput}
       placeholder="Search..."
       style="width:100%;background:#111;border:1px solid #333;color:#fff;padding:8px;border-radius:6px;font-size:14px;box-sizing:border-box"
     />

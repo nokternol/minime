@@ -2,6 +2,7 @@ import { OAuth2Client } from 'google-auth-library';
 
 export class GoogleAuth {
   private client: OAuth2Client;
+  readonly clientId: string;
 
   constructor(
     clientId: string,
@@ -9,6 +10,7 @@ export class GoogleAuth {
     private redirectUri: string,
     private allowedEmail: string
   ) {
+    this.clientId = clientId;
     this.client = new OAuth2Client(clientId, clientSecret, redirectUri);
   }
 
@@ -25,7 +27,7 @@ export class GoogleAuth {
     this.client.setCredentials(tokens);
     const ticket = await this.client.verifyIdToken({
       idToken: tokens.id_token,
-      audience: this.client._clientId,
+      audience: this.clientId,
     });
     const payload = ticket.getPayload();
     if (!payload) throw new Error('OAuth token payload missing');

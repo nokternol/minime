@@ -1,7 +1,8 @@
+import matter from 'gray-matter';
 import { ulid } from 'ulid';
 
 export interface CaptureInput {
-  type: 'idea' | 'plan' | 'discussion' | 'solution';
+  type: 'idea' | 'plan' | 'discussion' | 'solution' | 'insight';
   title: string;
   tags: string[];
   summary: string;
@@ -39,13 +40,6 @@ export function buildDocument(input: CaptureInput) {
     ...(input.problem ? { problem: input.problem } : {}),
   };
 
-  const yaml = Object.entries(frontmatter)
-    .map(
-      ([k, v]) =>
-        `${k}: ${Array.isArray(v) ? `[${(v as string[]).join(', ')}]` : JSON.stringify(v)}`
-    )
-    .join('\n');
-
-  const content = `---\n${yaml}\n---\n\n${input.body}`;
+  const content = matter.stringify(input.body, frontmatter);
   return { id, path, content, filename, branchName };
 }

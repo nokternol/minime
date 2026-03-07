@@ -1,15 +1,39 @@
+import { zValidator } from '@hono/zod-validator';
+import matter from 'gray-matter';
 import { Hono } from 'hono';
+import { z } from 'zod';
 import { buildDocument } from '../content/document.js';
 import type { GitHubClient } from '../github/client.js';
 import type { IndexCache } from '../store/index-cache.js';
 import { requireAuth } from './auth.js';
 
+// eslint-disable-next-line no-control-regex
+const NULL_CHAR_RE = new RegExp(String.fromCharCode(0), 'g');
+const SAFE_STRING = (max: number) =>
+  z
+    .string()
+    .min(1)
+    .max(max)
+    .transform((s) => s.replace(NULL_CHAR_RE, '').trim());
+
+const captureSchema = z.object({
+  type: z.enum(['idea', 'plan', 'discussion', 'solution']),
+  title: SAFE_STRING(200),
+  tags: z.array(z.string().max(50)).max(20).default([]),
+  summary: z.string().max(500).default(''),
+  body: z.string().max(50000).default(''),
+  related_to: z.string().optional(),
+  promoted_from: z.array(z.string()).optional(),
+  language: z.string().max(50).optional(),
+  problem: z.string().max(2000).optional(),
+});
+
 export function lifecycleRoutes(github: GitHubClient, cache: IndexCache) {
   const app = new Hono();
 
   // Capture new item
-  app.post('/api/capture', requireAuth(), async (c) => {
-    const input = await c.req.json();
+  app.post('/api/capture', requireAuth(), zValidator('json', captureSchema), async (c) => {
+    const input = c.req.valid('json');
     try {
       const doc = buildDocument(input);
       await github.createBranch(doc.branchName);
@@ -32,7 +56,7 @@ export function lifecycleRoutes(github: GitHubClient, cache: IndexCache) {
       return c.json({ id: doc.id, path: doc.path, pr: pr.number, branch: doc.branchName });
     } catch (err) {
       console.error('[capture]', err);
-      return c.json({ error: String(err) }, 500);
+      return c.json({ error: 'Internal server error' }, 500);
     }
   });
 
@@ -40,8 +64,19 @@ export function lifecycleRoutes(github: GitHubClient, cache: IndexCache) {
   app.post('/api/content/:id/commit', requireAuth(), async (c) => {
     const entry = cache.findById(c.req.param('id'));
     if (!entry?.pr) return c.json({ error: 'no open PR' }, 404);
-    await github.mergePR(entry.pr);
-    if (entry.branch) await github.deleteBranch(entry.branch);
+    try {
+      await github.mergePR(entry.pr);
+    } catch (err) {
+      console.error('[commit] mergePR failed', err);
+      return c.json({ error: 'Internal server error' }, 500);
+    }
+    try {
+      if (entry.branch) await github.deleteBranch(entry.branch);
+    } catch (err) {
+      // Branch deletion failure is non-fatal — PR is already merged
+      console.warn('[commit] deleteBranch failed (non-fatal)', err);
+    }
+    cache.upsert({ ...entry, pr: undefined, branch: undefined, status: 'done' });
     return c.json({ ok: true });
   });
 
@@ -49,16 +84,45 @@ export function lifecycleRoutes(github: GitHubClient, cache: IndexCache) {
   app.post('/api/content/:id/dismiss', requireAuth(), async (c) => {
     const entry = cache.findById(c.req.param('id'));
     if (!entry?.pr) return c.json({ error: 'no open PR' }, 404);
-    await github.closePR(entry.pr);
-    if (entry.branch) await github.deleteBranch(entry.branch);
+    try {
+      await github.closePR(entry.pr);
+    } catch (err) {
+      console.error('[dismiss] closePR failed', err);
+      return c.json({ error: 'Internal server error' }, 500);
+    }
+    try {
+      if (entry.branch) await github.deleteBranch(entry.branch);
+    } catch (err) {
+      console.warn('[dismiss] deleteBranch failed (non-fatal)', err);
+    }
+    cache.upsert({ ...entry, pr: undefined, branch: undefined, status: 'dismissed' });
     return c.json({ ok: true });
   });
 
-  // Park (status update handled by next save)
-  app.post('/api/content/:id/park', requireAuth(), (c) => {
+  // Park — set status to parked in GitHub and cache
+  app.post('/api/content/:id/park', requireAuth(), async (c) => {
     const entry = cache.findById(c.req.param('id'));
     if (!entry) return c.json({ error: 'not found' }, 404);
-    return c.json({ ok: true, note: 'status updated via next save' });
+
+    try {
+      const { content, encoding, sha } = await github.getFile(entry.path, entry.branch ?? 'main');
+      const decoded =
+        encoding === 'base64' ? Buffer.from(content, 'base64').toString('utf-8') : content;
+      const { data, content: body } = matter(decoded);
+      const updated = matter.stringify(body, { ...data, status: 'parked' });
+      await github.upsertFile(
+        entry.path,
+        updated,
+        'chore: park entry',
+        entry.branch ?? 'main',
+        sha
+      );
+      cache.upsert({ ...entry, status: 'parked' });
+      return c.json({ ok: true });
+    } catch (err) {
+      console.error('[park]', err);
+      return c.json({ error: 'Internal server error' }, 500);
+    }
   });
 
   return app;

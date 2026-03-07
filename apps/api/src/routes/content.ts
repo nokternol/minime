@@ -1,8 +1,14 @@
+import { zValidator } from '@hono/zod-validator';
 import matter from 'gray-matter';
 import { Hono } from 'hono';
+import { z } from 'zod';
 import type { GitHubClient } from '../github/client.js';
 import type { IndexCache } from '../store/index-cache.js';
 import { requireAuth } from './auth.js';
+
+const patchSchema = z.object({
+  session_summary: z.string().min(1).max(2000),
+});
 
 export function contentRoutes(cache: IndexCache, github: GitHubClient) {
   const app = new Hono();
@@ -49,11 +55,11 @@ export function contentRoutes(cache: IndexCache, github: GitHubClient) {
   });
 
   // Patch a single item — writes session_summary into frontmatter and pushes to branch
-  app.patch('/api/content/:id', requireAuth(), async (c) => {
+  app.patch('/api/content/:id', requireAuth(), zValidator('json', patchSchema), async (c) => {
     const id = c.req.param('id');
     const entry = cache.findById(id);
     if (!entry) return c.json({ error: 'not found' }, 404);
-    const { session_summary } = await c.req.json<{ session_summary: string }>();
+    const { session_summary } = c.req.valid('json');
 
     const { content, encoding, sha } = await github.getFile(entry.path, entry.branch ?? 'main');
     const decoded =

@@ -12,7 +12,7 @@ Rules:
 - If the user says "deep dive" or "expand", you may respond fully
 `.trim();
 
-const GEMINI_FLASH_MODEL = 'gemini-2.0-flash';
+const GEMINI_FLASH_MODEL = 'gemini-flash-latest';
 
 export class LLMRouter {
   private claude: Anthropic;

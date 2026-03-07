@@ -9,7 +9,9 @@
     "preview": "vite preview",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "typecheck": "svelte-kit sync && tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "storybook": "storybook dev --port 8745",
+    "build-storybook": "storybook build --output-dir storybook-static"
   },
   "devDependencies": {
     "@storybook/addon-essentials": "^8.6.14",

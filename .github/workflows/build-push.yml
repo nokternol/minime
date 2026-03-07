@@ -32,6 +32,8 @@ jobs:
 
       - name: Run quality checks
         run: ./scripts/check.sh
+        env:
+          PUBLIC_API_URL: http://localhost:8744
 
       - name: Security audit
         run: npm audit --audit-level=high

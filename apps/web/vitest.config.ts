@@ -1,8 +1,15 @@
+import { resolve } from 'node:path';
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   plugins: [sveltekit()],
+  resolve: {
+    alias: {
+      '$env/static/public': resolve('./src/tests/env.ts'),
+    },
+    conditions: ['browser'],
+  },
   test: {
     include: ['src/**/*.test.ts'],
     environment: 'happy-dom',
@@ -13,8 +20,5 @@ export default defineConfig({
         conditions: ['browser'],
       },
     },
-  },
-  resolve: {
-    conditions: ['browser'],
   },
 });

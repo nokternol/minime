@@ -46,6 +46,7 @@ describe('/chat/[id]', () => {
   });
 
   test('finish() calls summarise → patch → commit in order', async () => {
+    vi.stubGlobal('confirm', () => true);
     const calls: string[] = [];
 
     server.use(

@@ -1,11 +1,10 @@
-import { render, waitFor } from '@testing-library/svelte';
 import { http, HttpResponse } from 'msw';
 import { describe, expect, test } from 'vitest';
 import { server } from '../tests/server';
-import Layout from './+layout.svelte';
+import { load } from './+layout.js';
 
-describe('+layout.svelte', () => {
-  test('calls GET /auth/me on mount', async () => {
+describe('+layout load', () => {
+  test('calls GET /auth/me and returns user', async () => {
     let requested = false;
     server.use(
       http.get('http://localhost:8744/auth/me', () => {
@@ -14,8 +13,9 @@ describe('+layout.svelte', () => {
       })
     );
 
-    render(Layout);
+    const result = await load();
 
-    await waitFor(() => expect(requested).toBe(true));
+    expect(requested).toBe(true);
+    expect(result.user).toEqual({ email: 'u@test.com', name: 'User' });
   });
 });

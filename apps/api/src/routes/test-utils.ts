@@ -9,7 +9,9 @@ export const mockAuth = {
 };
 
 /** Mount authRoutes + additional routes, perform login, return {app, sessionCookie}. */
-export async function makeAuthedApp(...routes: Hono[]): Promise<{ app: Hono; sessionCookie: string }> {
+export async function makeAuthedApp(
+  ...routes: Hono[]
+): Promise<{ app: Hono; sessionCookie: string }> {
   const app = new Hono();
   app.onError((err, c) => c.json({ error: 'Internal server error' }, 500));
   app.route('/', authRoutes(mockAuth as unknown as GoogleAuth));

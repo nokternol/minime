@@ -82,9 +82,7 @@ async function fetchEntry(
 }
 
 export async function buildIndex(github: GitHubClient): Promise<IndexEntry[]> {
-  const dirResults = await Promise.allSettled(
-    CONTENT_DIRS.map((dir) => github.listFiles(dir))
-  );
+  const dirResults = await Promise.allSettled(CONTENT_DIRS.map((dir) => github.listFiles(dir)));
 
   const fileResults = await Promise.allSettled(
     dirResults.flatMap((result, i) => {

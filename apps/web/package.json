@@ -12,6 +12,11 @@
     "test": "vitest run"
   },
   "devDependencies": {
+    "@storybook/addon-essentials": "^8.6.14",
+    "@storybook/addon-interactions": "^8.6.14",
+    "@storybook/addon-svelte-csf": "^5.0.10",
+    "@storybook/sveltekit": "^8.6.18",
+    "@storybook/test": "^8.6.15",
     "@sveltejs/adapter-node": "^5.0.0",
     "@sveltejs/kit": "^2.0.0",
     "@sveltejs/vite-plugin-svelte": "^5.0.0",
@@ -20,6 +25,8 @@
     "@testing-library/user-event": "^14.6.1",
     "happy-dom": "^20.8.3",
     "msw": "^2.12.10",
+    "msw-storybook-addon": "^2.0.6",
+    "storybook": "^8.6.18",
     "svelte": "^5.0.0",
     "svelte-check": "^4.0.0",
     "typescript": "^5.6.0",

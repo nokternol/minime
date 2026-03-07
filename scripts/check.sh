@@ -39,7 +39,7 @@ if [ -f "apps/api/tsconfig.json" ]; then
 fi
 
 if [ -f "apps/web/tsconfig.json" ]; then
-  run_step "TypeScript (web)" bash -c "cd apps/web && npx tsc --noEmit"
+  run_step "TypeScript (web)" bash -c "cd apps/web && npx svelte-kit sync && npx tsc --noEmit"
 fi
 
 # Svelte: sync + check

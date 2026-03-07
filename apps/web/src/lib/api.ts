@@ -1,5 +1,5 @@
-import { PUBLIC_API_URL } from '$env/static/public';
-const BASE = PUBLIC_API_URL;
+import { env } from '$env/dynamic/public';
+const BASE = env.PUBLIC_API_URL;
 
 async function req<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE}${path}`, { credentials: 'include', ...options });

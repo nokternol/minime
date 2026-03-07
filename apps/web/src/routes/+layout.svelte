@@ -1,7 +1,7 @@
 <script lang="ts">
-import { PUBLIC_API_URL } from '$env/static/public';
+import { env } from '$env/dynamic/public';
 import { user } from '$lib/stores/auth.js';
-const apiBase = PUBLIC_API_URL;
+const apiBase = env.PUBLIC_API_URL;
 
 export let data: { user: { email: string; name: string } | null };
 $: user.set(data.user);

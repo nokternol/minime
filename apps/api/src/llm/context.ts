@@ -44,7 +44,7 @@ export function assembleContext(
   }
 
   return scored
-    .sort((a, b) => b.score - a.score || b.entry.updated.localeCompare(a.entry.updated))
+    .sort((a, b) => b.score - a.score || String(b.entry.updated).localeCompare(String(a.entry.updated)))
     .slice(0, limit)
     .map(({ entry }) => ({
       id: entry.id,

@@ -6,7 +6,7 @@
     "dev": "docker compose up",
     "build": "docker compose build",
     "check": "bash scripts/check.sh",
-    "prepare": "husky"
+    "prepare": "node -e \"require('fs').existsSync('.git') && require('child_process').execSync('husky', {stdio:'inherit'})\""
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.0",

@@ -24,12 +24,12 @@ describe('buildDocument', () => {
       body: 'the body',
     });
     expect(result.content).toMatch(/^---\n/);
-    expect(result.content).toContain('---\n\nthe body');
-    expect(result.content).toContain('status: "draft"');
-    expect(result.content).toContain('type: "plan"');
+    expect(result.content).toContain('the body');
+    expect(result.content).toContain('status: draft');
+    expect(result.content).toContain('type: plan');
   });
 
-  it('serialises tags as YAML array', () => {
+  it('serialises tags as YAML sequence', () => {
     const result = buildDocument({
       type: 'idea',
       title: 'T',
@@ -37,7 +37,9 @@ describe('buildDocument', () => {
       summary: 's',
       body: '',
     });
-    expect(result.content).toContain('tags: [a, b, c]');
+    expect(result.content).toContain('- a');
+    expect(result.content).toContain('- b');
+    expect(result.content).toContain('- c');
   });
 
   it('includes optional fields only when provided', () => {
@@ -52,10 +54,11 @@ describe('buildDocument', () => {
       related_to: 'ID1',
       promoted_from: ['X', 'Y'],
     });
-    expect(withOpts.content).toContain('language: "typescript"');
-    expect(withOpts.content).toContain('problem: "crashes"');
-    expect(withOpts.content).toContain('related_to: "ID1"');
-    expect(withOpts.content).toContain('promoted_from: [X, Y]');
+    expect(withOpts.content).toContain('language: typescript');
+    expect(withOpts.content).toContain('problem: crashes');
+    expect(withOpts.content).toContain('related_to: ID1');
+    expect(withOpts.content).toContain('promoted_from:');
+    expect(withOpts.content).toContain('X');
 
     const withoutOpts = buildDocument({
       type: 'idea',

@@ -66,7 +66,7 @@ describe('runParkedAnalysis', () => {
   it('writes insight type (not idea) into frontmatter', async () => {
     await runParkedAnalysis(mockLlm, mockCache, mockGithub);
     const [, fileContent] = vi.mocked(mockGithub.upsertFile).mock.calls[0];
-    expect(fileContent).toContain('type: "insight"');
+    expect(fileContent).toContain('type: insight');
   });
 
   it('creates a PR per pattern with 3+ ids', async () => {

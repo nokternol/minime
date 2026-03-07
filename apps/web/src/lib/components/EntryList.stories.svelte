@@ -1,16 +1,6 @@
 <script module>
-import { user } from '$lib/stores/auth.js';
 import { defineMeta } from '@storybook/addon-svelte-csf';
 import EntryList from './EntryList.svelte';
-
-// withAuth is inlined here rather than imported from .storybook/decorators.ts.
-// .storybook/package.json {"type":"commonjs"} prevents Vite from serving files
-// from that directory as ESM in the browser. $lib/stores/auth.js resolves via
-// the $lib alias configured in main.ts viteFinal and works correctly in stories.
-const withAuth = (Story, context) => {
-  user.set({ email: 'dev@example.com', name: 'Dev User' });
-  return Story(context);
-};
 
 const mockEntries = [
   {
@@ -51,7 +41,6 @@ const mockEntries = [
 const { Story } = defineMeta({
   title: 'Components/EntryList',
   component: EntryList,
-  decorators: [withAuth],
   // onSelect is a callback prop — Storybook Actions auto-generates a spy for it.
   // Clicking a row calls onSelect(entry) internally and the spy logs it to the Actions panel.
 });

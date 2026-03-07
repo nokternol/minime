@@ -1,6 +1,5 @@
 FROM node:22-alpine AS build
 WORKDIR /app
-ENV HUSKY=0
 COPY package.json package-lock.json ./
 COPY apps/web/package.json apps/web/
 RUN npm ci --workspace=apps/web

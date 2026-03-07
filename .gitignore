@@ -10,3 +10,6 @@ npm-debug.log*
 Thumbs.db
 *.tsbuildinfo
 coverage/
+
+# Worktrees
+.worktrees/

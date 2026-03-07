@@ -1,10 +1,10 @@
 <script lang="ts">
 import { PUBLIC_API_URL } from '$env/static/public';
-import { loadUser, user } from '$lib/stores/auth.js';
-import { onMount } from 'svelte';
+import { user } from '$lib/stores/auth.js';
 const apiBase = PUBLIC_API_URL;
 
-onMount(loadUser);
+export let data: { user: { email: string; name: string } | null };
+$: user.set(data.user);
 </script>
 
 {#if $user}

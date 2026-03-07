@@ -1,2 +1,2 @@
-import { loadUser } from '$lib/stores/auth.js';
-export const load = async () => ({ user: await loadUser() });
+import { api } from '$lib/api.js';
+export const load = async () => ({ user: await api.me() });

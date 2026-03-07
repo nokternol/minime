@@ -1,9 +1,9 @@
 import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
+import { rateLimiter } from 'hono-rate-limiter';
 import { bodyLimit } from 'hono/body-limit';
 import { cors } from 'hono/cors';
 import { secureHeaders } from 'hono/secure-headers';
-import { rateLimiter } from 'hono-rate-limiter';
 import cron from 'node-cron';
 import { GoogleAuth } from './auth/google.js';
 import { GitHubClient } from './github/client.js';

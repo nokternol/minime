@@ -2,6 +2,8 @@ import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
 import { bodyLimit } from 'hono/body-limit';
 import { cors } from 'hono/cors';
+import { secureHeaders } from 'hono/secure-headers';
+import { rateLimiter } from 'hono-rate-limiter';
 import cron from 'node-cron';
 import { GoogleAuth } from './auth/google.js';
 import { GitHubClient } from './github/client.js';
@@ -31,7 +33,28 @@ app.use(
   '*',
   cors({ origin: process.env.PWA_ORIGIN ?? 'http://localhost:8743', credentials: true })
 );
+app.use('*', secureHeaders());
 app.use('*', bodyLimit({ maxSize: 1 * 1024 * 1024 })); // 1 MB global limit
+
+// Rate limit LLM endpoints: 30 req/min per session cookie
+app.use(
+  '/api/chat*',
+  rateLimiter({
+    windowMs: 60 * 1000,
+    limit: 30,
+    keyGenerator: (c) => c.req.header('cookie') ?? c.req.header('x-forwarded-for') ?? 'anon',
+  })
+);
+
+// Rate limit write endpoints: 60 req/min per session
+app.use(
+  '/api/capture',
+  rateLimiter({
+    windowMs: 60 * 1000,
+    limit: 60,
+    keyGenerator: (c) => c.req.header('cookie') ?? c.req.header('x-forwarded-for') ?? 'anon',
+  })
+);
 
 const github = new GitHubClient(
   requireEnv('GITHUB_TOKEN'),

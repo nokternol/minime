@@ -45,7 +45,9 @@ describe('LLMRouter — chat', () => {
   it('propagates LLM error', async () => {
     mockCreate.mockRejectedValue(new Error('rate limited'));
     const router = makeRouter();
-    await expect(router.chat([{ role: 'user', content: 'hi' }], '')).rejects.toThrow('rate limited');
+    await expect(router.chat([{ role: 'user', content: 'hi' }], '')).rejects.toThrow(
+      'rate limited'
+    );
   });
 });
 

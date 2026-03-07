@@ -7,9 +7,11 @@ export let onSelect: (entry: IndexEntry) => void;
 
 <ul style="list-style:none;padding:0;margin:0">
   {#each entries as entry (entry.id)}
-    <li
+    <li>
+    <button
+      type="button"
       on:click={() => onSelect(entry)}
-      style="padding:12px 16px;border-bottom:1px solid #222;cursor:pointer;display:flex;flex-direction:column;gap:4px"
+      style="width:100%;padding:12px 16px;border:none;border-bottom:1px solid #222;background:transparent;cursor:pointer;display:flex;flex-direction:column;gap:4px;color:inherit;text-align:left"
     >
       <div style="display:flex;align-items:center;gap:8px">
         <StatusDot status={entry.status} />
@@ -24,6 +26,7 @@ export let onSelect: (entry: IndexEntry) => void;
           {/each}
         </div>
       {/if}
+    </button>
     </li>
   {/each}
 </ul>

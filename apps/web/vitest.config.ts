@@ -6,7 +6,7 @@ export default defineConfig({
   plugins: [sveltekit()],
   resolve: {
     alias: {
-      '$env/static/public': resolve('./src/tests/env.ts'),
+      '$env/dynamic/public': resolve('./src/tests/env.ts'),
     },
     conditions: ['browser'],
   },

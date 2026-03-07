@@ -15,5 +15,10 @@
     "@sveltejs/vite-plugin-svelte": "^6.2.4",
     "husky": "^9.1.7",
     "lint-staged": "^16.3.2"
+  },
+  "msw": {
+    "workerDirectory": [
+      "apps/web/static"
+    ]
   }
 }

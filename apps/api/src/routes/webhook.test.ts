@@ -39,7 +39,7 @@ describe('webhookRoutes', () => {
     expect(res.status).toBe(401);
   });
 
-  it('returns 200 with valid signature on non-merge event', async () => {
+  it('returns 202 with valid signature on non-merge event', async () => {
     const app = makeApp();
     const body = JSON.stringify({ action: 'opened', pull_request: { merged: false } });
     const res = await app.request('/webhook/github', {
@@ -51,10 +51,10 @@ describe('webhookRoutes', () => {
       },
       body,
     });
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(202);
   });
 
-  it('calls cache.load on PR merged event', async () => {
+  it('schedules cache.load on PR merged event and returns 202 immediately', async () => {
     let loadCalled = false;
     const cache = {
       load: async () => {
@@ -74,7 +74,9 @@ describe('webhookRoutes', () => {
       },
       body,
     });
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(202);
+    // Allow setImmediate callback to run
+    await new Promise((resolve) => setImmediate(resolve));
     expect(loadCalled).toBe(true);
   });
 });

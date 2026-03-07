@@ -6,9 +6,7 @@ import EntryList from '$lib/components/EntryList.svelte';
 import { onMount } from 'svelte';
 
 const TYPES = ['all', 'idea', 'plan', 'discussion', 'solution', 'insight'];
-// biome-ignore lint/style/useConst: Svelte bind:value and on:click reassignment require let
 let activeType = 'all';
-// biome-ignore lint/style/useConst: Svelte bind:value requires let (two-way binding mutates this)
 let query = '';
 let entries: IndexEntry[] = [];
 let inflightCount = 0;

@@ -5,9 +5,12 @@
   "scripts": {
     "dev": "docker compose up",
     "build": "docker compose build",
-    "check": "bash scripts/check.sh"
+    "check": "bash scripts/check.sh",
+    "prepare": "husky"
   },
   "devDependencies": {
-    "@biomejs/biome": "^1.9.0"
+    "@biomejs/biome": "^1.9.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.3.2"
   }
 }

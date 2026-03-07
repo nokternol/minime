@@ -15,7 +15,7 @@ export class IndexCache {
   }
 
   all(): IndexEntry[] {
-    return this.entries;
+    return [...this.entries];
   }
 
   byType(type: string): IndexEntry[] {

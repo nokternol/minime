@@ -11,6 +11,7 @@ fi
 
 PASS=0
 FAIL=0
+WARN=0
 
 run_step() {
   local label="$1"
@@ -23,6 +24,21 @@ run_step() {
   else
     echo "  ❌ $label"
     FAIL=$((FAIL + 1))
+  fi
+}
+
+# run_warn: same as run_step but failure is non-blocking — increments WARN, not FAIL.
+run_warn() {
+  local label="$1"
+  shift
+  echo ""
+  echo "▶ $label (warning)"
+  if "$@"; then
+    echo "  ✅ $label"
+    PASS=$((PASS + 1))
+  else
+    echo "  ⚠️  $label — non-blocking"
+    WARN=$((WARN + 1))
   fi
 }
 
@@ -61,9 +77,15 @@ if [ -f "apps/web/package.json" ]; then
   run_step "Web build" bash -c "cd apps/web && npx vite build"
 fi
 
+# Storybook build: verifies addon-a11y registers and all stories compile — non-blocking.
+# a11y violations surface in the browser panel at dev time, not as CI exit codes.
+if [ -f "apps/web/package.json" ] && grep -q '"storybook"' apps/web/package.json; then
+  run_warn "Storybook build (a11y addon smoke)" bash -c "cd apps/web && npx storybook build --quiet"
+fi
+
 echo ""
 echo "════════════════════════════════════"
-echo "  Results: $PASS passed, $FAIL failed"
+echo "  Results: $PASS passed, $FAIL failed, $WARN warnings"
 echo "════════════════════════════════════"
 
 [ "$FAIL" -eq 0 ]

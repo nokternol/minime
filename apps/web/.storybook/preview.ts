@@ -19,6 +19,11 @@ const preview: Preview = {
       default: 'app-dark',
       values: [{ name: 'app-dark', value: '#0f0f0f' }],
     },
+    a11y: {
+      // Run checks automatically on each story render — results appear in the
+      // Accessibility panel. Manual = false means no user click required.
+      manual: false,
+    },
   },
   // beforeEach returns a teardown function called after each story unmounts.
   // This is the correct place to clean up decorator side effects.

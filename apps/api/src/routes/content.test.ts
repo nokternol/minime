@@ -113,7 +113,7 @@ describe('GET /api/content/inflight', () => {
     expect(data[0]).toEqual({ pr: 42, branch: 'idea/abc-draft', title: 'Draft Idea' });
   });
 
-  it('includes id when cache has matching branch entry', async () => {
+  it('includes id and type when cache has matching branch entry', async () => {
     vi.mocked(mockCache.findByBranch).mockReturnValueOnce(ENTRIES[0]);
     const res = await authed('/api/content/inflight');
     const data = (await res.json()) as Array<{
@@ -121,8 +121,10 @@ describe('GET /api/content/inflight', () => {
       branch: string;
       title: string;
       id?: string;
+      type?: string;
     }>;
     expect(data[0].id).toBe('idea-1');
+    expect(data[0].type).toBe('idea');
   });
 });
 

@@ -89,6 +89,55 @@ describe('/chat/[id]', () => {
     await waitFor(() => expect(calls).toEqual(['summarise', 'patch', 'commit']));
   });
 
+  test('shows Park button when item is loaded', async () => {
+    render(Page);
+    await waitFor(() => expect(screen.getByRole('button', { name: /park/i })).toBeInTheDocument());
+  });
+
+  test('shows Promote button for idea type', async () => {
+    render(Page);
+    await waitFor(() => expect(screen.getByRole('button', { name: /plan/i })).toBeInTheDocument());
+  });
+
+  test('does not show Promote button for plan type', async () => {
+    server.use(
+      http.get('http://localhost:8744/api/content/test-id', () =>
+        HttpResponse.json({
+          id: 'test-id',
+          type: 'plan',
+          title: 'A plan',
+          status: 'draft',
+          tags: [],
+          summary: '',
+          created: '2026-01-01',
+          updated: '2026-01-01',
+          path: 'plans/a-plan.md',
+          body: '',
+        })
+      )
+    );
+    render(Page);
+    await waitFor(() => expect(screen.getByRole('button', { name: /park/i })).toBeInTheDocument());
+    expect(screen.queryByRole('button', { name: /plan/i })).toBeNull();
+  });
+
+  test('Park button calls park endpoint and navigates home', async () => {
+    const { goto: mockGoto } = await import('$app/navigation');
+    const parkCalled = vi.fn();
+    server.use(
+      http.post('http://localhost:8744/api/content/test-id/park', () => {
+        parkCalled();
+        return HttpResponse.json({ ok: true });
+      })
+    );
+    const user = userEvent.setup();
+    render(Page);
+    await waitFor(() => screen.getByRole('button', { name: /park/i }));
+    await user.click(screen.getByRole('button', { name: /park/i }));
+    await waitFor(() => expect(parkCalled).toHaveBeenCalled());
+    expect(mockGoto).toHaveBeenCalledWith('/');
+  });
+
   test('shows error message when chat send fails', async () => {
     server.use(
       http.post('http://localhost:8744/api/chat', () =>

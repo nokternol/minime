@@ -12,7 +12,7 @@ async function capture() {
   saving = true;
   error = '';
   try {
-    const fm = await api.summarise(body || title);
+    const fm = await api.summarise(body || title).catch(() => ({ summary: '' }));
     const { id } = await api.capture({ type: 'idea', title, tags: [], summary: fm.summary, body });
     goto(`/chat/${id}`);
   } catch {

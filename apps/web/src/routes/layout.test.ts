@@ -18,4 +18,14 @@ describe('+layout load', () => {
     expect(requested).toBe(true);
     expect(result.user).toEqual({ email: 'u@test.com', name: 'User' });
   });
+
+  test('returns null user when /auth/me fails (SSR safety)', async () => {
+    server.use(
+      http.get('http://localhost:8744/auth/me', () => HttpResponse.json({}, { status: 401 }))
+    );
+
+    const result = await load();
+
+    expect(result.user).toBeNull();
+  });
 });

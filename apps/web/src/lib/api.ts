@@ -4,7 +4,7 @@ const BASE = env.PUBLIC_API_URL;
 async function req<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE}${path}`, { credentials: 'include', ...options });
   if (res.status === 401) {
-    window.location.href = `${BASE}/auth/login`;
+    if (typeof window !== 'undefined') window.location.href = `${BASE}/auth/login`;
     throw new Error('unauthorized');
   }
   if (!res.ok) throw new Error(`API error: ${res.status}`);
@@ -36,6 +36,7 @@ export interface InFlightItem {
   pr: number;
   branch: string;
   title: string;
+  id?: string;
 }
 
 export const api = {

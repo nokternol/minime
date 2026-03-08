@@ -40,4 +40,20 @@ describe('/chat/new', () => {
 
     await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument());
   });
+
+  test('captures successfully even when summarise returns 500', async () => {
+    const { goto } = await import('$app/navigation');
+    server.use(
+      http.post('http://localhost:8744/api/chat/summarise', () =>
+        HttpResponse.json({ error: 'llm error' }, { status: 500 })
+      )
+    );
+
+    render(Page);
+    await userEvent.type(screen.getByPlaceholderText(/title/i), 'Resilient idea');
+    await userEvent.click(screen.getByRole('button', { name: /capture/i }));
+
+    await waitFor(() => expect(goto).toHaveBeenCalledWith('/chat/new-id'));
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
 });

@@ -32,11 +32,15 @@ export function contentRoutes(cache: IndexCache, github: GitHubClient) {
   app.get('/api/content/inflight', requireAuth(), async (c) => {
     const prs = await github.listOpenPRs();
     return c.json(
-      prs.map((pr) => ({
-        pr: pr.number,
-        branch: pr.head.ref,
-        title: pr.title,
-      }))
+      prs.map((pr) => {
+        const entry = cache.findByBranch(pr.head.ref);
+        return {
+          pr: pr.number,
+          branch: pr.head.ref,
+          title: pr.title,
+          ...(entry ? { id: entry.id } : {}),
+        };
+      })
     );
   });
 

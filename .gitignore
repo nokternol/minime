@@ -17,3 +17,6 @@ coverage/
 # Storybook
 storybook-static/
 .storybook/cache/
+
+# Claude plans
+docs/plans/

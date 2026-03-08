@@ -38,7 +38,7 @@ export function contentRoutes(cache: IndexCache, github: GitHubClient) {
           pr: pr.number,
           branch: pr.head.ref,
           title: pr.title,
-          ...(entry ? { id: entry.id } : {}),
+          ...(entry ? { id: entry.id, type: entry.type } : {}),
         };
       })
     );

@@ -10,6 +10,8 @@ let messages: Array<{ role: 'user' | 'assistant'; content: string }> = [];
 let input = '';
 let loading = false;
 let finishing = false;
+let parking = false;
+let promoting = false;
 let contextTitles: string[] = [];
 let error = '';
 
@@ -44,6 +46,31 @@ async function send() {
   }
 }
 
+async function park() {
+  parking = true;
+  error = '';
+  try {
+    await api.park(id);
+    goto('/');
+  } catch {
+    error = 'Failed to park. Please try again.';
+    parking = false;
+  }
+}
+
+async function promote() {
+  if (!item) return;
+  promoting = true;
+  error = '';
+  try {
+    const { id: planId } = await api.promote(id, item.title, item.summary);
+    goto(`/chat/${planId}`);
+  } catch {
+    error = 'Failed to promote. Please try again.';
+    promoting = false;
+  }
+}
+
 async function finish() {
   if (!confirm('Commit this session to GitHub?')) return;
   finishing = true;
@@ -65,8 +92,14 @@ async function finish() {
   <header style="padding:12px 16px;border-bottom:1px solid #222;display:flex;align-items:center;gap:8px">
     <a href="/" style="color:#aaa;text-decoration:none">←</a>
     <span style="flex:1;font-weight:500;font-size:14px">{item?.title ?? '...'}</span>
-    {#if item?.pr}
-      <button on:click={finish} disabled={finishing} style="font-size:12px;background:#1a3a1a;color:#4ade80;border:1px solid #4ade80;padding:4px 10px;border-radius:6px;cursor:pointer">{finishing ? '...' : 'Commit ✓'}</button>
+    {#if item}
+      {#if item.type === 'idea'}
+        <button on:click={promote} disabled={promoting || finishing} style="font-size:12px;background:#1a2a3a;color:#a78bfa;border:1px solid #a78bfa;padding:4px 10px;border-radius:6px;cursor:pointer">{promoting ? '...' : '→ Plan'}</button>
+      {/if}
+      <button on:click={park} disabled={parking || finishing} style="font-size:12px;background:#2a2a1a;color:#facc15;border:1px solid #facc15;padding:4px 10px;border-radius:6px;cursor:pointer">{parking ? '...' : 'Park'}</button>
+      {#if item.pr}
+        <button on:click={finish} disabled={finishing || parking} style="font-size:12px;background:#1a3a1a;color:#4ade80;border:1px solid #4ade80;padding:4px 10px;border-radius:6px;cursor:pointer">{finishing ? '...' : 'Commit ✓'}</button>
+      {/if}
     {/if}
   </header>
 

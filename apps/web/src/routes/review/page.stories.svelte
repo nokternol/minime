@@ -13,23 +13,7 @@ const { Story } = defineMeta({
 <Story name="Empty" />
 
 <Story
-  name="Items without chat link"
-  parameters={{
-    msw: {
-      handlers: [
-        http.get('http://localhost:8744/api/content/inflight', () =>
-          HttpResponse.json([
-            { pr: 12, branch: 'idea/focus-system', title: '[idea] Build a focus system' },
-            { pr: 9, branch: 'plan/api-refactor', title: '[plan] Refactor API client' },
-          ])
-        ),
-      ],
-    },
-  }}
-/>
-
-<Story
-  name="Items with chat links"
+  name="Idea — full triage"
   parameters={{
     msw: {
       handlers: [
@@ -40,8 +24,73 @@ const { Story } = defineMeta({
               branch: 'idea/focus-system',
               title: '[idea] Build a focus system',
               id: '01JR4KFOCUS',
+              type: 'idea',
             },
-            { pr: 9, branch: 'plan/api-refactor', title: '[plan] Refactor API client' },
+          ])
+        ),
+      ],
+    },
+  }}
+/>
+
+<Story
+  name="Plan — no promote"
+  parameters={{
+    msw: {
+      handlers: [
+        http.get('http://localhost:8744/api/content/inflight', () =>
+          HttpResponse.json([
+            {
+              pr: 9,
+              branch: 'plan/api-refactor',
+              title: '[plan] Refactor API client',
+              id: '01JR4KPLAN',
+              type: 'plan',
+            },
+          ])
+        ),
+      ],
+    },
+  }}
+/>
+
+<Story
+  name="No id — discard only"
+  parameters={{
+    msw: {
+      handlers: [
+        http.get('http://localhost:8744/api/content/inflight', () =>
+          HttpResponse.json([
+            { pr: 15, branch: 'idea/unmatched', title: '[idea] Unmatched draft' },
+          ])
+        ),
+      ],
+    },
+  }}
+/>
+
+<Story
+  name="Mixed queue"
+  parameters={{
+    msw: {
+      handlers: [
+        http.get('http://localhost:8744/api/content/inflight', () =>
+          HttpResponse.json([
+            {
+              pr: 12,
+              branch: 'idea/focus-system',
+              title: '[idea] Build a focus system',
+              id: '01JR4KFOCUS',
+              type: 'idea',
+            },
+            {
+              pr: 9,
+              branch: 'plan/api-refactor',
+              title: '[plan] Refactor API client',
+              id: '01JR4KPLAN',
+              type: 'plan',
+            },
+            { pr: 15, branch: 'idea/unmatched', title: '[idea] Unmatched draft' },
           ])
         ),
       ],

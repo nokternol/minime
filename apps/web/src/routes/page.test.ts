@@ -8,15 +8,17 @@ import Page from './+page.svelte';
 const BASE = 'http://localhost:8744';
 
 describe('/ browse', () => {
-  test('renders status filter row with all statuses', async () => {
+  test('renders type and status filter rows as radiogroups', async () => {
     render(Page);
-    const statusFilter = await screen.findByRole('group', { name: /status filter/i }).catch(() =>
-      // fallback: find the aria-label div
-      screen.findByLabelText(/status filter/i)
-    );
-    expect(within(statusFilter).getByRole('button', { name: 'parked' })).toBeInTheDocument();
-    expect(within(statusFilter).getByRole('button', { name: 'dismissed' })).toBeInTheDocument();
-    expect(within(statusFilter).getByRole('button', { name: 'all' })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByRole('radiogroup', { name: /type/i })).toBeInTheDocument();
+      expect(screen.getByRole('radiogroup', { name: /status/i })).toBeInTheDocument();
+    });
+    const typeGroup = screen.getByRole('radiogroup', { name: /type/i });
+    const statusGroup = screen.getByRole('radiogroup', { name: /status/i });
+    expect(within(typeGroup).getByRole('radio', { name: 'idea' })).toBeInTheDocument();
+    expect(within(statusGroup).getByRole('radio', { name: 'parked' })).toBeInTheDocument();
+    expect(within(statusGroup).getByRole('radio', { name: 'dismissed' })).toBeInTheDocument();
   });
 
   test('selecting a status filter reloads content with that status', async () => {
@@ -29,8 +31,8 @@ describe('/ browse', () => {
     );
     const user = userEvent.setup();
     render(Page);
-    const statusFilter = await screen.findByLabelText(/status filter/i);
-    await user.click(within(statusFilter).getByRole('button', { name: 'parked' }));
+    const statusGroup = await screen.findByRole('radiogroup', { name: /status/i });
+    await user.click(within(statusGroup).getByRole('radio', { name: 'parked' }));
     await waitFor(() => expect(capturedUrl).toContain('status=parked'));
   });
 
@@ -44,10 +46,10 @@ describe('/ browse', () => {
     );
     const user = userEvent.setup();
     render(Page);
-    const statusFilter = await screen.findByLabelText(/status filter/i);
-    await user.click(within(statusFilter).getByRole('button', { name: 'parked' }));
+    const statusGroup = await screen.findByRole('radiogroup', { name: /status/i });
+    await user.click(within(statusGroup).getByRole('radio', { name: 'parked' }));
     await waitFor(() => expect(capturedUrl).toContain('status=parked'));
-    await user.click(within(statusFilter).getByRole('button', { name: 'all' }));
+    await user.click(within(statusGroup).getByRole('radio', { name: 'all' }));
     await waitFor(() => expect(capturedUrl).not.toContain('status='));
   });
 });

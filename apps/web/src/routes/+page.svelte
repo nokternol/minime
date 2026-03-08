@@ -57,18 +57,24 @@ function onSelect(entry: IndexEntry) {
     />
   </div>
 
-  <div style="display:flex;gap:0;overflow-x:auto;border-bottom:1px solid #111">
+  <div role="radiogroup" aria-label="Type" style="display:flex;gap:0;overflow-x:auto;border-bottom:1px solid #111">
+    <span style="padding:8px 12px;font-size:11px;color:#555;align-self:center;flex-shrink:0">Type</span>
     {#each TYPES as t}
       <button
+        role="radio"
+        aria-checked={activeType === t}
         on:click={() => { activeType = t; load() }}
         style="padding:8px 12px;border:none;background:{activeType===t?'#1a1a1a':'transparent'};color:{activeType===t?'#fff':'#666'};cursor:pointer;font-size:12px;white-space:nowrap"
       >{t}</button>
     {/each}
   </div>
 
-  <div aria-label="Status filter" style="display:flex;gap:0;overflow-x:auto;border-bottom:1px solid #222">
+  <div role="radiogroup" aria-label="Status" style="display:flex;gap:0;overflow-x:auto;border-bottom:1px solid #222">
+    <span style="padding:6px 10px;font-size:11px;color:#555;align-self:center;flex-shrink:0">Status</span>
     {#each STATUSES as s}
       <button
+        role="radio"
+        aria-checked={activeStatus === s}
         on:click={() => { activeStatus = s; load() }}
         style="padding:6px 10px;border:none;background:{activeStatus===s?'#1a1a1a':'transparent'};color:{activeStatus===s?'#ccc':'#555'};cursor:pointer;font-size:11px;white-space:nowrap"
       >{s}</button>

@@ -38,6 +38,7 @@ const mockCache = {
     ENTRIES.filter((e) => e.title.toLowerCase().includes(q) || e.summary.toLowerCase().includes(q))
   ),
   findById: vi.fn((id: string) => ENTRIES.find((e) => e.id === id)),
+  findByBranch: vi.fn().mockReturnValue(undefined),
 } as unknown as IndexCache;
 
 const mockGithub = {
@@ -105,11 +106,23 @@ describe('GET /api/content', () => {
 });
 
 describe('GET /api/content/inflight', () => {
-  it('returns mapped PR list', async () => {
+  it('returns mapped PR list without id when no cache match', async () => {
     const res = await authed('/api/content/inflight');
     const data = (await res.json()) as Array<{ pr: number; branch: string; title: string }>;
     expect(data).toHaveLength(1);
     expect(data[0]).toEqual({ pr: 42, branch: 'idea/abc-draft', title: 'Draft Idea' });
+  });
+
+  it('includes id when cache has matching branch entry', async () => {
+    vi.mocked(mockCache.findByBranch).mockReturnValueOnce(ENTRIES[0]);
+    const res = await authed('/api/content/inflight');
+    const data = (await res.json()) as Array<{
+      pr: number;
+      branch: string;
+      title: string;
+      id?: string;
+    }>;
+    expect(data[0].id).toBe('idea-1');
   });
 });
 

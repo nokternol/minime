@@ -40,6 +40,10 @@ export class IndexCache {
     return this.entries.find((e) => e.id === id);
   }
 
+  findByBranch(branch: string): IndexEntry | undefined {
+    return this.entries.find((e) => e.branch === branch);
+  }
+
   upsert(entry: IndexEntry): void {
     const idx = this.entries.findIndex((e) => e.id === entry.id);
     if (idx >= 0) this.entries[idx] = entry;

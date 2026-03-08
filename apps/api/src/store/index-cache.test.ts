@@ -110,4 +110,13 @@ updated: 2026-01-01T00:00:00Z
     expect(cache.findById('FIND-ME')).toBe(entry);
     expect(cache.findById('NOPE')).toBeUndefined();
   });
+
+  it('findByBranch returns correct entry', () => {
+    const cache = new IndexCache(mockGitHub);
+    const entry = makeEntry({ id: 'BRANCHED', branch: 'idea/my-branch' });
+    // @ts-expect-error accessing private for test setup
+    cache.entries = [entry, makeEntry({ id: 'OTHER', path: 'ideas/other.md' })];
+    expect(cache.findByBranch('idea/my-branch')).toBe(entry);
+    expect(cache.findByBranch('idea/no-such-branch')).toBeUndefined();
+  });
 });

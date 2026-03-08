@@ -9,6 +9,13 @@ on:
       - 'apps/web/**'
       - 'package.json'
       - 'package-lock.json'
+  pull_request:
+    paths:
+      - 'apps/api/**'
+      - 'apps/web/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/**'
 
 env:
   REGISTRY: ghcr.io
@@ -42,6 +49,7 @@ jobs:
     name: Build API image
     runs-on: ubuntu-latest
     needs: quality-gate
+    if: github.event_name == 'push'
     permissions:
       contents: read
       packages: write
@@ -79,6 +87,7 @@ jobs:
     name: Build web image
     runs-on: ubuntu-latest
     needs: quality-gate
+    if: github.event_name == 'push'
     permissions:
       contents: read
       packages: write

@@ -1,6 +1,7 @@
 import type { GitHubClient } from '../github/client.js';
 import { buildIndex } from '../index-builder/build.js';
 import type { IndexEntry } from '../index-builder/build.js';
+import { seedDraftEntries } from '../index-builder/seed.js';
 
 export class IndexCache {
   private entries: IndexEntry[] = [];
@@ -10,6 +11,7 @@ export class IndexCache {
 
   async load(): Promise<void> {
     this.entries = await buildIndex(this.github);
+    await seedDraftEntries(this.github, this);
     this.lastBuilt = new Date();
     console.log(`[index-cache] loaded ${this.entries.length} entries`);
   }

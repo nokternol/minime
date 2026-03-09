@@ -7,6 +7,8 @@
     "dev:local": "concurrently -n api,web -c cyan,magenta \"npm run dev -w apps/api\" \"npm run dev -w apps/web\"",
     "build": "docker compose build",
     "check": "bash scripts/check.sh",
+    "lint": "biome check .",
+    "test": "npm run test -w apps/api && npm run test -w apps/web",
     "prepare": "node -e \"require('fs').existsSync('.git') && require('child_process').execSync('husky', {stdio:'inherit'})\"",
     "storybook": "npm run storybook --workspace=apps/web"
   },
@@ -15,7 +17,11 @@
     "@sveltejs/vite-plugin-svelte": "^4.0.0",
     "concurrently": "^9.2.1",
     "husky": "^9.1.7",
-    "lint-staged": "^16.3.2"
+    "lint-staged": "^16.3.2",
+    "vitest": "^2.1.9"
+  },
+  "lint-staged": {
+    "*.{ts,js,svelte,json,css}": "biome check --write --no-errors-on-unmatched"
   },
   "msw": {
     "workerDirectory": ["apps/web/static"]

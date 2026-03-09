@@ -33,5 +33,6 @@ export const defaultHandlers = [
   http.post(`${BASE}/api/content/:id/commit`, () => HttpResponse.json({ ok: true })),
   http.post(`${BASE}/api/content/:id/park`, () => HttpResponse.json({ ok: true })),
   http.post(`${BASE}/api/content/:id/dismiss`, () => HttpResponse.json({ ok: true })),
+  http.post(`${BASE}/api/inflight/:pr/discard`, () => HttpResponse.json({ ok: true })),
   http.post(`${BASE}/api/chat`, () => HttpResponse.json({ reply: 'Hello', context: [] })),
 ];

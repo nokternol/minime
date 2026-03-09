@@ -21,6 +21,7 @@ function makeEntry(overrides: Partial<IndexEntry> = {}): IndexEntry {
 const mockGitHub = {
   listFiles: vi.fn(),
   getFile: vi.fn(),
+  listOpenPRs: vi.fn().mockResolvedValue([]),
 } as unknown as GitHubClient;
 
 describe('IndexCache', () => {

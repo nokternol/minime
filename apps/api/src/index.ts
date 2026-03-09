@@ -7,6 +7,7 @@ import { secureHeaders } from 'hono/secure-headers';
 import cron from 'node-cron';
 import { GoogleAuth } from './auth/google.js';
 import { GitHubClient } from './github/client.js';
+import { runNormalizeBrain } from './jobs/normalize-brain.js';
 import { runParkedAnalysis } from './jobs/parked-analysis.js';
 import { LLMRouter } from './llm/router.js';
 import { authRoutes } from './routes/auth.js';
@@ -74,7 +75,7 @@ const googleAuth = new GoogleAuth(
 
 requireEnv('SESSION_SECRET');
 app.route('/', authRoutes(googleAuth));
-app.route('/', webhookRoutes(cache, requireEnv('GITHUB_WEBHOOK_SECRET')));
+app.route('/', webhookRoutes(cache, github, requireEnv('GITHUB_WEBHOOK_SECRET')));
 app.route('/', contentRoutes(cache, github));
 app.route('/', lifecycleRoutes(github, cache));
 const llm = new LLMRouter(requireEnv('ANTHROPIC_API_KEY'), requireEnv('GEMINI_API_KEY'));
@@ -89,3 +90,11 @@ console.log(`API running on port ${port}`);
 const analysisCron = process.env.PARKED_ANALYSIS_CRON ?? '0 9 * * 1';
 cron.schedule(analysisCron, () => runParkedAnalysis(llm, cache, github));
 console.log(`Parked analysis scheduled: ${analysisCron}`);
+
+const normalizeCron = process.env.NORMALIZE_CRON ?? '0 3 * * 0';
+cron.schedule(normalizeCron, () =>
+  runNormalizeBrain(github).then(({ scanned, updated }) =>
+    console.log(`[normalize-cron] scanned=${scanned} updated=${updated}`)
+  )
+);
+console.log(`Brain normalize scheduled: ${normalizeCron}`);

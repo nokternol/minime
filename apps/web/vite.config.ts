@@ -3,4 +3,10 @@ import { defineConfig } from 'vite';
 
 export default defineConfig({
   plugins: [sveltekit()],
+  server: {
+    proxy: {
+      '/api': 'http://localhost:8744',
+      '/auth': 'http://localhost:8744',
+    },
+  },
 });

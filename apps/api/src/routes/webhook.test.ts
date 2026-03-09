@@ -13,13 +13,16 @@ function sign(body: string): string {
 
 const mockCache = {
   load: async () => {},
+  findByBranch: () => undefined,
 } as unknown as IndexCache;
 
-const mockGitHub = {} as unknown as GitHubClient;
+const mockGitHub = {
+  getFile: async () => ({ content: '', encoding: 'utf-8', sha: 'abc' }),
+} as unknown as GitHubClient;
 
 function makeApp() {
   const app = new Hono();
-  app.route('/', webhookRoutes(mockCache, SECRET));
+  app.route('/', webhookRoutes(mockCache, mockGitHub, SECRET));
   return app;
 }
 
@@ -62,7 +65,7 @@ describe('webhookRoutes', () => {
       },
     } as unknown as IndexCache;
     const app = new Hono();
-    app.route('/', webhookRoutes(cache, SECRET));
+    app.route('/', webhookRoutes(cache, mockGitHub, SECRET));
 
     const body = JSON.stringify({ action: 'closed', pull_request: { merged: true } });
     const res = await app.request('/webhook/github', {

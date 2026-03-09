@@ -171,6 +171,33 @@ describe('POST /api/content/:id/dismiss', () => {
   });
 });
 
+describe('POST /api/inflight/:pr/discard', () => {
+  it('returns 401 without auth', async () => {
+    const res = await app.request('/api/inflight/7/discard', { method: 'POST' });
+    expect(res.status).toBe(401);
+  });
+
+  it('closes PR by number and returns ok', async () => {
+    vi.mocked(mockGithub.closePR).mockClear();
+    const res = await post('/api/inflight/7/discard');
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ ok: true });
+    expect(mockGithub.closePR).toHaveBeenCalledWith(7);
+  });
+
+  it('returns 400 for non-numeric pr param', async () => {
+    const res = await post('/api/inflight/notanumber/discard');
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({ error: 'invalid pr' });
+  });
+
+  it('returns 500 when closePR throws', async () => {
+    vi.mocked(mockGithub.closePR).mockRejectedValueOnce(new Error('GitHub error'));
+    const res = await post('/api/inflight/7/discard');
+    expect(res.status).toBe(500);
+  });
+});
+
 describe('POST /api/content/:id/park', () => {
   it('returns 404 for unknown entry', async () => {
     const res = await post('/api/content/unknown/park');

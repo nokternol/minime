@@ -89,6 +89,26 @@ describe('/review', () => {
     await waitFor(() => expect(screen.queryByText('My idea')).toBeNull());
   });
 
+  test('Discard on orphan item (no id) calls discardPR endpoint and removes item', async () => {
+    const discardCalled = vi.fn();
+    server.use(
+      http.get(`${BASE}/api/content/inflight`, () => HttpResponse.json([noIdItem])),
+      http.post(`${BASE}/api/inflight/:pr/discard`, () => {
+        discardCalled();
+        return HttpResponse.json({ ok: true });
+      })
+    );
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    const user = userEvent.setup();
+    render(Page);
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: /discard/i })).toBeInTheDocument()
+    );
+    await user.click(screen.getByRole('button', { name: /discard/i }));
+    await waitFor(() => expect(discardCalled).toHaveBeenCalled());
+    await waitFor(() => expect(screen.queryByText('Unmatched draft')).toBeNull());
+  });
+
   test('Promote calls contentById then capture and navigates to new plan', async () => {
     const { goto: mockGoto } = await import('$app/navigation');
     const captureCalled = vi.fn();

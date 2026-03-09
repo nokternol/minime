@@ -4,6 +4,7 @@ import { Hono } from 'hono';
 import { z } from 'zod';
 import { buildDocument } from '../content/document.js';
 import type { GitHubClient } from '../github/client.js';
+import { runNormalizeBrain } from '../jobs/normalize-brain.js';
 import type { IndexCache } from '../store/index-cache.js';
 import { requireAuth } from './auth.js';
 
@@ -123,6 +124,25 @@ export function lifecycleRoutes(github: GitHubClient, cache: IndexCache) {
       console.error('[park]', err);
       return c.json({ error: 'Internal server error' }, 500);
     }
+  });
+
+  // Discard orphan PR — by PR number, no cache entry required
+  app.post('/api/inflight/:pr/discard', requireAuth(), async (c) => {
+    const pr = Number(c.req.param('pr'));
+    if (!Number.isFinite(pr)) return c.json({ error: 'invalid pr' }, 400);
+    try {
+      await github.closePR(pr);
+      return c.json({ ok: true });
+    } catch (err) {
+      console.error('[discard-orphan]', err);
+      return c.json({ error: 'Internal server error' }, 500);
+    }
+  });
+
+  // Admin: normalize all committed content on main
+  app.post('/api/admin/normalize', requireAuth(), async (c) => {
+    const { scanned, updated } = await runNormalizeBrain(github);
+    return c.json({ scanned, updated });
   });
 
   return app;

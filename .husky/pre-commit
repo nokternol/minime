@@ -1,1 +1,35 @@
+#!/usr/bin/env sh
+. "$(dirname "$0")/_/husky.sh"
+
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$ROOT"
+
+FAIL=0
+
+# Run a check; capture output; print details only on failure
+check() {
+  local name="$1"; shift
+  local out
+  out=$("$@" 2>&1)
+  local status=$?
+  if [ $status -eq 0 ]; then
+    printf '✅ %s\n' "$name"
+  else
+    printf '❌ %s\n' "$name"
+    printf '%s\n' "$out"
+    FAIL=$((FAIL + 1))
+  fi
+}
+
+# 1. Format + safe lint fixes on staged files — lint-staged auto-restages changes
 npx lint-staged
+
+# 2. Type safety — catches broken types before they reach CI
+check 'TypeScript (api)' npm run typecheck --workspace=apps/api
+check 'TypeScript (web)' npm run typecheck --workspace=apps/web
+
+# 3. Tests — each workspace runs its own vitest config
+check 'Tests (api)' npm run test --workspace=apps/api
+check 'Tests (web)' npm run test --workspace=apps/web
+
+[ $FAIL -eq 0 ]

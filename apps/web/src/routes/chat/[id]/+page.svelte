@@ -14,6 +14,8 @@ let parking = false;
 let promoting = false;
 let contextTitles: string[] = [];
 let error = '';
+let saving = false;
+let savedAt: Date | null = null;
 
 const idParam = $page.params.id;
 if (!idParam) throw new Error('Missing route param: id');
@@ -28,6 +30,19 @@ onMount(async () => {
   }
 });
 
+async function save() {
+  if (messages.length === 0) return;
+  saving = true;
+  try {
+    const conversation = messages.map((m) => `${m.role}: ${m.content}`).join('\n');
+    const { summary } = await api.summarise(conversation);
+    await api.patch(id, { session_summary: summary });
+    savedAt = new Date();
+  } finally {
+    saving = false;
+  }
+}
+
 async function send() {
   if (!input.trim()) return;
   const userMsg = { role: 'user' as const, content: input };
@@ -35,12 +50,51 @@ async function send() {
   input = '';
   loading = true;
   error = '';
+  const BASE = import.meta.env.PUBLIC_API_URL ?? '';
+  const assistantMsg = { role: 'assistant' as const, content: '' };
+  messages = [...messages, assistantMsg];
   try {
-    const res = await api.chat(messages, item?.title, id);
-    messages = [...messages, { role: 'assistant', content: res.reply }];
-    contextTitles = res.context.map((c) => c.title);
+    const res = await fetch(`${BASE}/api/chat`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        messages: messages.slice(0, -1),
+        query: item?.title,
+        relatedToId: id,
+      }),
+    });
+    if (!res.ok) throw new Error(`API error: ${res.status}`);
+    if (!res.body) throw new Error('No response body');
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const parts = buffer.split('\n\n');
+      buffer = parts.pop() ?? '';
+      for (const part of parts) {
+        const eventLine = part.split('\n').find((l) => l.startsWith('event:'));
+        const dataLine = part.split('\n').find((l) => l.startsWith('data:'));
+        if (!dataLine) continue;
+        const data = dataLine.slice(5).trim();
+        if (eventLine?.includes('context')) {
+          try {
+            contextTitles = JSON.parse(data).map((e: { title: string }) => e.title);
+          } catch {
+            /* ignore */
+          }
+        } else if (data !== '[DONE]') {
+          assistantMsg.content += data;
+          messages = [...messages];
+        }
+      }
+    }
   } catch {
     error = 'Failed to send message. Please try again.';
+    messages = messages.slice(0, -1); // remove empty assistant message
   } finally {
     loading = false;
   }
@@ -50,6 +104,7 @@ async function park() {
   parking = true;
   error = '';
   try {
+    await save();
     await api.park(id);
     goto('/');
   } catch {
@@ -63,7 +118,7 @@ async function promote() {
   promoting = true;
   error = '';
   try {
-    const { id: planId } = await api.promote(id, item.title, item.summary);
+    const { id: planId } = await api.promote(id, item.title, item.summary, item.session_summary);
     goto(`/chat/${planId}`);
   } catch {
     error = 'Failed to promote. Please try again.';
@@ -97,6 +152,7 @@ async function finish() {
         <button on:click={promote} disabled={promoting || finishing} style="font-size:12px;background:#1a2a3a;color:#a78bfa;border:1px solid #a78bfa;padding:4px 10px;border-radius:6px;cursor:pointer">{promoting ? '...' : '→ Plan'}</button>
       {/if}
       <button on:click={park} disabled={parking || finishing} style="font-size:12px;background:#2a2a1a;color:#facc15;border:1px solid #facc15;padding:4px 10px;border-radius:6px;cursor:pointer">{parking ? '...' : 'Park'}</button>
+      <button on:click={save} disabled={saving || finishing || parking} style="font-size:12px;background:#1a1a2a;color:#94a3b8;border:1px solid #94a3b8;padding:4px 10px;border-radius:6px;cursor:pointer">{saving ? '...' : savedAt ? 'Saved ✓' : 'Save'}</button>
       {#if item.pr}
         <button on:click={finish} disabled={finishing || parking} style="font-size:12px;background:#1a3a1a;color:#4ade80;border:1px solid #4ade80;padding:4px 10px;border-radius:6px;cursor:pointer">{finishing ? '...' : 'Commit ✓'}</button>
       {/if}
@@ -115,11 +171,8 @@ async function finish() {
         align-self:{msg.role==='user'?'flex-end':'flex-start'};
         max-width:85%;background:{msg.role==='user'?'#1a3a5c':'#1a1a1a'};
         padding:10px 14px;border-radius:12px;font-size:14px;white-space:pre-wrap
-      ">{msg.content}</div>
+      ">{msg.content || (loading && msg.role === 'assistant' ? '…' : msg.content)}</div>
     {/each}
-    {#if loading}
-      <div style="align-self:flex-start;color:#666;font-size:14px">...</div>
-    {/if}
     {#if error}
       <p role="alert" style="color:#f87171;font-size:13px;padding:0 4px">{error}</p>
     {/if}

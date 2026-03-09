@@ -58,7 +58,7 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(input),
     }),
-  patch: (id: string, body: { session_summary: string }) =>
+  patch: (id: string, body: { session_summary?: string; body?: string }) =>
     req<{ ok: boolean }>(`/api/content/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -68,7 +68,7 @@ export const api = {
   park: (id: string) => req(`/api/content/${id}/park`, { method: 'POST' }),
   dismiss: (id: string) => req(`/api/content/${id}/dismiss`, { method: 'POST' }),
   discardPR: (pr: number) => req(`/api/inflight/${pr}/discard`, { method: 'POST' }),
-  promote: (id: string, title: string, summary: string) =>
+  promote: (id: string, title: string, summary: string, sessionSummary?: string) =>
     req<{ id: string; pr: number; branch: string }>('/api/capture', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -78,7 +78,17 @@ export const api = {
         tags: [],
         summary,
         promoted_from: [id],
-        body: `## Goal\n${summary || title}\n\n## Steps\n- (to be refined)\n\n## Success criteria\n- (to be refined)`,
+        body: [
+          '## Goal',
+          summary || title,
+          '',
+          ...(sessionSummary ? ['## Context from idea session', sessionSummary, ''] : []),
+          '## Steps',
+          '- (to be refined)',
+          '',
+          '## Success criteria',
+          '- (to be refined)',
+        ].join('\n'),
       }),
     }),
   chat: (messages: unknown[], query?: string, relatedToId?: string) =>

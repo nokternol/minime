@@ -34,8 +34,20 @@ export function chatRoutes(llm: LLMRouter, cache: IndexCache) {
     const { messages, query, relatedToId } = c.req.valid('json');
     const contextEntries = assembleContext(cache.all(), query, relatedToId);
     const contextBlock = formatContextBlock(contextEntries);
-    const reply = await llm.chat(messages, contextBlock);
-    return c.json({ reply, context: contextEntries.map((e) => ({ id: e.id, title: e.title })) });
+    const { streamSSE } = await import('hono/streaming');
+    return streamSSE(c, async (stream) => {
+      // First event: context metadata
+      await stream.writeSSE({
+        event: 'context',
+        data: JSON.stringify(contextEntries.map((e) => ({ id: e.id, title: e.title }))),
+      });
+      // Stream tokens
+      for await (const chunk of llm.stream(messages, contextBlock)) {
+        await stream.writeSSE({ data: chunk });
+      }
+      // Done sentinel
+      await stream.writeSSE({ data: '[DONE]' });
+    });
   });
 
   app.post('/api/chat/summarise', requireAuth(), zValidator('json', summariseSchema), async (c) => {

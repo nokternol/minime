@@ -8,8 +8,13 @@ const mockCache = {
   all: vi.fn().mockReturnValue([]),
 } as unknown as IndexCache;
 
+async function* mockStream() {
+  yield 'assistant ';
+  yield 'reply';
+}
+
 const mockLlm = {
-  chat: vi.fn().mockResolvedValue('assistant reply'),
+  stream: vi.fn().mockImplementation(mockStream),
   summarise: vi.fn().mockResolvedValue('session summary'),
   generateFrontmatter: vi.fn().mockResolvedValue({ tags: ['a'], summary: 'a summary' }),
 } as unknown as LLMRouter;
@@ -52,21 +57,30 @@ describe('POST /api/chat', () => {
     expect(res.status).toBe(400);
   });
 
-  it('returns reply and context on valid request', async () => {
+  it('streams reply tokens and context event', async () => {
     const res = await authedPost(app, sessionCookie, '/api/chat', { messages: validMessages });
     expect(res.status).toBe(200);
-    const data = (await res.json()) as { reply: string; context: unknown[] };
-    expect(data.reply).toBe('assistant reply');
-    expect(Array.isArray(data.context)).toBe(true);
+    expect(res.headers.get('content-type')).toContain('text/event-stream');
+    const text = await res.text();
+    expect(text).toContain('event: context');
+    expect(text).toContain('data: assistant ');
+    expect(text).toContain('data: reply');
+    expect(text).toContain('data: [DONE]');
   });
 
-  it('propagates LLM error as 500 via global error handler', async () => {
-    vi.mocked(mockLlm.chat).mockRejectedValueOnce(new Error('LLM timeout'));
+  it('closes stream gracefully on LLM error', async () => {
+    const failingIterable: AsyncIterable<string> = {
+      [Symbol.asyncIterator]: () => ({
+        next: () => Promise.reject(new Error('LLM timeout')),
+        return: () => Promise.resolve({ value: undefined, done: true as const }),
+      }),
+    };
+    vi.mocked(mockLlm.stream).mockReturnValueOnce(failingIterable);
     const res = await authedPost(app, sessionCookie, '/api/chat', { messages: validMessages });
-    expect(res.status).toBe(500);
-    const data = (await res.json()) as { error: string };
-    expect(data.error).toBe('Internal server error');
-    expect(data.error).not.toContain('LLM timeout');
+    // SSE always returns 200 once headers are sent; stream closes on error without [DONE]
+    expect(res.status).toBe(200);
+    const text = await res.text();
+    expect(text).not.toContain('data: [DONE]');
   });
 });
 

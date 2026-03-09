@@ -38,6 +38,24 @@ export class LLMRouter {
     return (response.content[0] as { text: string }).text;
   }
 
+  async *stream(
+    messages: Array<{ role: 'user' | 'assistant'; content: string }>,
+    contextBlock: string
+  ): AsyncIterable<string> {
+    const system = `${SHORT_RESPONSE_CONTRACT}\n\n## Prior context\n\n${contextBlock}`;
+    const stream = this.claude.messages.stream({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 1024,
+      system,
+      messages,
+    });
+    for await (const chunk of stream) {
+      if (chunk.type === 'content_block_delta' && chunk.delta.type === 'text_delta') {
+        yield chunk.delta.text;
+      }
+    }
+  }
+
   async summarise(content: string): Promise<string> {
     const result = await this.flashModel.generateContent(
       `Write a 2-3 sentence session summary of this conversation. Be specific about decisions made and next steps.\n\n${content}`

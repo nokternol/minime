@@ -7,7 +7,8 @@ import type { IndexCache } from '../store/index-cache.js';
 import { requireAuth } from './auth.js';
 
 const patchSchema = z.object({
-  session_summary: z.string().min(1).max(2000),
+  session_summary: z.string().min(1).max(2000).optional(),
+  body: z.string().max(50000).optional(),
 });
 
 export function contentRoutes(cache: IndexCache, github: GitHubClient) {
@@ -63,14 +64,17 @@ export function contentRoutes(cache: IndexCache, github: GitHubClient) {
     const id = c.req.param('id');
     const entry = cache.findById(id);
     if (!entry) return c.json({ error: 'not found' }, 404);
-    const { session_summary } = c.req.valid('json');
+    const input = c.req.valid('json');
 
     const { content, encoding, sha } = await github.getFile(entry.path, entry.branch ?? 'main');
     const decoded =
       encoding === 'base64' ? Buffer.from(content, 'base64').toString('utf-8') : content;
 
-    const { data, content: body } = matter(decoded);
-    const updated = matter.stringify(body, { ...data, session_summary });
+    const { data, content: existingBody } = matter(decoded);
+    const updated = matter.stringify(input.body ?? existingBody, {
+      ...data,
+      ...(input.session_summary ? { session_summary: input.session_summary } : {}),
+    });
 
     await github.upsertFile(
       entry.path,

@@ -53,6 +53,8 @@ async function doDiscard(item: InFlightItem) {
   try {
     if (item.id) {
       await api.dismiss(item.id);
+    } else {
+      await api.discardPR(item.pr);
     }
     remove(item);
   } finally {

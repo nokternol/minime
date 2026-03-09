@@ -67,6 +67,7 @@ export const api = {
   commit: (id: string) => req(`/api/content/${id}/commit`, { method: 'POST' }),
   park: (id: string) => req(`/api/content/${id}/park`, { method: 'POST' }),
   dismiss: (id: string) => req(`/api/content/${id}/dismiss`, { method: 'POST' }),
+  discardPR: (pr: number) => req(`/api/inflight/${pr}/discard`, { method: 'POST' }),
   promote: (id: string, title: string, summary: string) =>
     req<{ id: string; pr: number; branch: string }>('/api/capture', {
       method: 'POST',
